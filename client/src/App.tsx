@@ -14,6 +14,7 @@ import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
 import ProjectsPage from "@/pages/ProjectsPage";
 import MembersPage from "@/pages/MembersPage";
+import BudgetPage from "@/pages/BudgetPage";
 import PaymentsPage from "@/pages/PaymentsPage";
 import CensusPage from "@/pages/CensusPage";
 import ChatPage from "@/pages/ChatPage";
@@ -82,6 +83,12 @@ function AuthenticatedRouter() {
               <Route path="/members">
                 <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire"]}>
                   <MembersPage />
+                </ProtectedRoute>
+              </Route>
+
+              <Route path="/budget">
+                <ProtectedRoute allowedRoles={["admin", "président", "trésorier"]}>
+                  <BudgetPage />
                 </ProtectedRoute>
               </Route>
 

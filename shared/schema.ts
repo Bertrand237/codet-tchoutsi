@@ -155,6 +155,42 @@ export type Project = z.infer<typeof projectSchema>;
 export const insertProjectSchema = projectSchema.omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 
+// Budget transaction schema
+export const transactionTypes = ["revenu", "dépense"] as const;
+export type TransactionType = typeof transactionTypes[number];
+
+export const transactionCategories = [
+  "cotisations",
+  "dons",
+  "événements",
+  "projets",
+  "fonctionnement",
+  "salaires",
+  "fournitures",
+  "communication",
+  "autre"
+] as const;
+export type TransactionCategory = typeof transactionCategories[number];
+
+export const budgetTransactionSchema = z.object({
+  id: z.string(),
+  type: z.enum(transactionTypes),
+  montant: z.number().positive(),
+  categorie: z.enum(transactionCategories),
+  description: z.string(),
+  date: z.date(),
+  projetId: z.string().optional(),
+  projetNom: z.string().optional(),
+  creePar: z.string(),
+  creeParNom: z.string(),
+  createdAt: z.date(),
+});
+
+export type BudgetTransaction = z.infer<typeof budgetTransactionSchema>;
+
+export const insertBudgetTransactionSchema = budgetTransactionSchema.omit({ id: true, createdAt: true });
+export type InsertBudgetTransaction = z.infer<typeof insertBudgetTransactionSchema>;
+
 // Statistics schema for dashboard
 export const statisticsSchema = z.object({
   totalMembers: z.number(),
