@@ -12,6 +12,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
+import ProjectsPage from "@/pages/ProjectsPage";
+import MembersPage from "@/pages/MembersPage";
 import PaymentsPage from "@/pages/PaymentsPage";
 import CensusPage from "@/pages/CensusPage";
 import ChatPage from "@/pages/ChatPage";
@@ -71,9 +73,15 @@ function AuthenticatedRouter() {
                 </ProtectedRoute>
               </Route>
 
+              <Route path="/projects">
+                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                  <ProjectsPage />
+                </ProtectedRoute>
+              </Route>
+
               <Route path="/members">
                 <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire"]}>
-                  <DashboardPage />
+                  <MembersPage />
                 </ProtectedRoute>
               </Route>
 

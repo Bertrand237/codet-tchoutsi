@@ -123,6 +123,38 @@ export type Advertisement = z.infer<typeof advertisementSchema>;
 export const insertAdvertisementSchema = advertisementSchema.omit({ id: true, createdAt: true });
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
 
+// Project schema
+export const projectStatuses = ["planifié", "en_cours", "en_pause", "terminé", "archivé"] as const;
+export type ProjectStatus = typeof projectStatuses[number];
+
+export const projectPriorities = ["basse", "moyenne", "haute", "urgente"] as const;
+export type ProjectPriority = typeof projectPriorities[number];
+
+export const projectSchema = z.object({
+  id: z.string(),
+  titre: z.string(),
+  description: z.string(),
+  statut: z.enum(projectStatuses),
+  priorite: z.enum(projectPriorities),
+  budget: z.number().optional(),
+  budgetUtilise: z.number().optional(),
+  responsableId: z.string(),
+  responsableNom: z.string(),
+  dateDebut: z.date(),
+  dateEcheance: z.date(),
+  dateAchevement: z.date().optional(),
+  membresAssignes: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  progression: z.number().min(0).max(100).optional(), // 0-100%
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type Project = z.infer<typeof projectSchema>;
+
+export const insertProjectSchema = projectSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
 // Statistics schema for dashboard
 export const statisticsSchema = z.object({
   totalMembers: z.number(),
@@ -133,6 +165,9 @@ export const statisticsSchema = z.object({
   totalFamilies: z.number(),
   totalMessages: z.number(),
   totalBlogPosts: z.number(),
+  totalProjects: z.number().optional(),
+  activeProjects: z.number().optional(),
+  completedProjects: z.number().optional(),
 });
 
 export type Statistics = z.infer<typeof statisticsSchema>;

@@ -45,8 +45,11 @@ service cloud.firestore {
                       request.auth.uid == userId &&
                       request.resource.data.role == resource.data.role;
       
-      // Only admin can delete users or change roles
-      allow delete, update: if hasRole('admin');
+      // Admin and président can change roles
+      allow update: if isAdminOrPresident();
+      
+      // Only admin can delete users
+      allow delete: if hasRole('admin');
     }
     
     // Payments collection
@@ -140,6 +143,25 @@ service cloud.firestore {
       
       // Only admin and président can manage ads
       allow create, update, delete: if isAdminOrPresident();
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      // Members can read all projects
+      allow read: if isAuthenticated() &&
+                     hasAnyRole(['membre', 'admin', 'président', 'trésorier', 'commissaire']);
+      
+      // Only admin and président can create projects
+      allow create: if isAdminOrPresident();
+      
+      // Project owners, admin, and président can update
+      allow update: if isAuthenticated() && (
+        resource.data.responsableId == request.auth.uid ||
+        isAdminOrPresident()
+      );
+      
+      // Only admin can delete projects
+      allow delete: if hasRole('admin');
     }
   }
 }

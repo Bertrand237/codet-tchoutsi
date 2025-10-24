@@ -3,7 +3,7 @@ import { collection, query, getDocs, where, orderBy, limit } from "firebase/fire
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp } from "lucide-react";
+import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper } from "lucide-react";
 import type { Statistics } from "@shared/schema";
 
 export default function DashboardPage() {
@@ -17,13 +17,27 @@ export default function DashboardPage() {
     totalFamilies: 0,
     totalMessages: 0,
     totalBlogPosts: 0,
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [usersSnap, paymentsSnap, pendingSnap, validatedSnap, familiesSnap, messagesSnap, blogSnap] = await Promise.all([
+        const [
+          usersSnap,
+          paymentsSnap,
+          pendingSnap,
+          validatedSnap,
+          familiesSnap,
+          messagesSnap,
+          blogSnap,
+          projectsSnap,
+          activeProjectsSnap,
+          completedProjectsSnap,
+        ] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "payments")),
           getDocs(query(collection(db, "payments"), where("statut", "==", "en_attente"))),
@@ -31,6 +45,9 @@ export default function DashboardPage() {
           getDocs(collection(db, "families")),
           getDocs(query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(100))),
           getDocs(collection(db, "blog")),
+          getDocs(collection(db, "projects")),
+          getDocs(query(collection(db, "projects"), where("statut", "==", "en_cours"))),
+          getDocs(query(collection(db, "projects"), where("statut", "==", "terminé"))),
         ]);
 
         const totalAmount = paymentsSnap.docs.reduce((sum, doc) => sum + (doc.data().montant || 0), 0);
@@ -44,6 +61,9 @@ export default function DashboardPage() {
           totalFamilies: familiesSnap.size,
           totalMessages: messagesSnap.size,
           totalBlogPosts: blogSnap.size,
+          totalProjects: projectsSnap.size,
+          activeProjects: activeProjectsSnap.size,
+          completedProjects: completedProjectsSnap.size,
         });
       } catch (error) {
         console.error("Error fetching statistics:", error);
@@ -64,11 +84,18 @@ export default function DashboardPage() {
       bgColor: "bg-primary/10",
     },
     {
+      title: "Projets Actifs",
+      value: stats.activeProjects,
+      icon: FolderKanban,
+      color: "text-green-600",
+      bgColor: "bg-green-100 dark:bg-green-900/20",
+    },
+    {
       title: "Paiements Validés",
       value: stats.validatedPayments,
       icon: CheckCircle,
-      color: "text-green-600",
-      bgColor: "bg-green-100 dark:bg-green-900/20",
+      color: "text-blue-600",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
     },
     {
       title: "En Attente",
@@ -88,13 +115,6 @@ export default function DashboardPage() {
       title: "Familles",
       value: stats.totalFamilies,
       icon: UsersRound,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100 dark:bg-blue-900/20",
-    },
-    {
-      title: "Messages",
-      value: stats.totalMessages,
-      icon: MessageSquare,
       color: "text-purple-600",
       bgColor: "bg-purple-100 dark:bg-purple-900/20",
     },
@@ -151,6 +171,18 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <FolderKanban className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {stats.totalProjects} projets ({stats.activeProjects} actifs, {stats.completedProjects} terminés)
+                  </p>
+                  <p className="text-xs text-muted-foreground">Gestion de projets</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
@@ -163,8 +195,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-green-600" />
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">
@@ -175,14 +207,14 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                  <UsersRound className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                  <Newspaper className="h-5 w-5 text-purple-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">
-                    {stats.totalFamilies} familles recensées
+                    {stats.totalBlogPosts} articles publiés
                   </p>
-                  <p className="text-xs text-muted-foreground">Base de données familiale</p>
+                  <p className="text-xs text-muted-foreground">Blog et annonces</p>
                 </div>
               </div>
             </div>
@@ -195,6 +227,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
+              <a
+                href="/projects"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover-elevate active-elevate-2 transition-all"
+                data-testid="link-quick-projects"
+              >
+                <div className="h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <FolderKanban className="h-6 w-6 text-green-600" />
+                </div>
+                <span className="text-sm font-medium text-center">Projets</span>
+              </a>
+
               <a
                 href="/payments"
                 className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover-elevate active-elevate-2 transition-all"
@@ -218,23 +261,12 @@ export default function DashboardPage() {
               </a>
 
               <a
-                href="/census"
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover-elevate active-elevate-2 transition-all"
-                data-testid="link-quick-census"
-              >
-                <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                  <UsersRound className="h-6 w-6 text-blue-600" />
-                </div>
-                <span className="text-sm font-medium text-center">Recensement</span>
-              </a>
-
-              <a
                 href="/blog"
                 className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover-elevate active-elevate-2 transition-all"
                 data-testid="link-quick-blog"
               >
-                <div className="h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <Newspaper className="h-6 w-6 text-blue-600" />
                 </div>
                 <span className="text-sm font-medium text-center">Blog</span>
               </a>

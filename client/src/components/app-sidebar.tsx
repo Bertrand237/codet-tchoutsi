@@ -8,6 +8,7 @@ import {
   Video,
   BarChart3,
   LogOut,
+  FolderKanban,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +33,12 @@ const menuItems = [
     url: "/dashboard",
     icon: Home,
     roles: ["admin", "président", "trésorier", "commissaire", "membre", "visiteur"],
+  },
+  {
+    title: "Projets",
+    url: "/projects",
+    icon: FolderKanban,
+    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Membres",
