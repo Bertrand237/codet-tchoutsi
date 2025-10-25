@@ -77,7 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    await account.deleteSession('current');
+    try {
+      await account.deleteSession('current');
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    } finally {
+      setCurrentUser(null);
+      setUserProfile(null);
+      window.location.href = '/login';
+    }
   }
 
   useEffect(() => {
