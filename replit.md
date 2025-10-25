@@ -143,3 +143,19 @@ Required secrets in Replit:
     - Fallbacks ensure backward compatibility with any legacy data that might exist with old field names
     - ✅ Application fully functional with zero LSP errors and no console errors
     - ✅ Architect confirmed all schemas and compatibility fallbacks are correct
+  - ✅ **New Features** (2025-10-25):
+    - **Video Upload Progress Bar in AdsPage**:
+      * Implemented `uploadBytesResumable` in firebase-compat.ts with simulated real-time progress tracking
+      * Added visual Progress component showing upload percentage (0-100%)
+      * Progress displayed in both progress bar and button text ("Téléchargement... X%")
+      * Proper error handling with progress interval cleanup to prevent memory leaks
+      * Try/catch in completion callback ensures UI recovery from downstream errors
+    - **User Profile Page**:
+      * Created `/profile` route accessible to all authenticated users
+      * View mode displays: displayName, email, role, account creation date, profile photo
+      * Edit mode allows updating: displayName and profile photo (photoURL)
+      * Profile photo upload with real-time progress bar
+      * Role-based privilege descriptions for all 6 user roles
+      * Integrated in sidebar footer with clickable avatar/name link
+      * Uses Appwrite Storage for profile picture uploads
+      * Auto-reload after successful profile update to reflect changes
