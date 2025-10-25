@@ -5,17 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
-import { userRoles, type UserRole } from "@shared/schema";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<UserRole>("membre");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -46,14 +43,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await signUp(email, password, displayName, role);
+      // Tout le monde est "membre" par défaut (sauf le premier qui devient admin automatiquement)
+      await signUp(email, password, displayName, "membre");
       toast({
         title: "Bienvenue !",
         description: "Votre compte a été créé avec succès",
       });
       setLocation("/dashboard");
     } catch (error: any) {
-      console.error("Erreur complète:", error);
       toast({
         variant: "destructive",
         title: "Erreur d'inscription",
@@ -110,22 +107,6 @@ export default function RegisterPage() {
                   data-testid="input-email"
                   className="h-12"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Rôle</Label>
-                <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
-                  <SelectTrigger className="h-12" data-testid="select-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userRoles.map((r) => (
-                      <SelectItem key={r} value={r} className="capitalize">
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">

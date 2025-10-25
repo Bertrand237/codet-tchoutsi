@@ -33,22 +33,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre") {
     try {
-      console.log("🚀 Début de l'inscription...");
-      
       // Créer le compte utilisateur
-      console.log("1️⃣ Création du compte Appwrite...");
       const user = await account.create(ID.unique(), email, password, displayName);
-      console.log("✅ Compte créé:", user.$id);
       
       // Vérifier si c'est le premier utilisateur
-      console.log("2️⃣ Vérification premier utilisateur...");
       const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
       const isFirstUser = usersListResponse.total === 0;
-      console.log("👤 Premier utilisateur?", isFirstUser);
       
-      // Le premier utilisateur devient automatiquement admin
-      const finalRole = isFirstUser ? "admin" : role;
-      console.log("🎭 Rôle attribué:", finalRole);
+      // Le premier utilisateur devient automatiquement admin, les autres sont membres
+      const finalRole = isFirstUser ? "admin" : "membre";
       
       const userProfile = {
         email,
@@ -58,14 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       // Créer le profil utilisateur dans la base de données
-      console.log("3️⃣ Création du profil dans la DB...");
       await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
-      console.log("✅ Profil créé");
       
       // Se connecter automatiquement
-      console.log("4️⃣ Connexion automatique...");
       await account.createEmailPasswordSession(email, password);
-      console.log("✅ Session créée");
       
       // Recharger les informations utilisateur
       const currentUser = await account.get();
@@ -81,15 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phoneNumber: userDoc.phoneNumber,
         createdAt: new Date(userDoc.createdAt),
       });
-      
-      console.log("🎉 Inscription terminée avec succès!");
     } catch (error: any) {
-      console.error("❌ Erreur d'inscription:", error);
-      console.error("📋 Type d'erreur:", typeof error);
-      console.error("📋 Message:", error?.message);
-      console.error("📋 Code:", error?.code);
-      console.error("📋 Type:", error?.type);
-      console.error("📋 Objet complet:", JSON.stringify(error, null, 2));
+      console.error("Erreur d'inscription:", error?.message || error);
       throw new Error(error?.message || error?.type || "Erreur lors de l'inscription");
     }
   }
