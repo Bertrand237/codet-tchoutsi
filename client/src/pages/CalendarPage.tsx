@@ -11,8 +11,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Plus, MapPin, Clock, Users } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, MapPin, Clock, Users } from "lucide-react";
 import type { Event as CalendarEvent, EventType } from "@shared/schema";
+import { Calendar, momentLocalizer, View, Views } from "react-big-calendar";
+import moment from "moment";
+import "moment/locale/fr";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+moment.locale("fr");
+const localizer = momentLocalizer(moment);
 
 export default function CalendarPage() {
   const { userProfile } = useAuth();
@@ -21,7 +28,9 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [viewMode, setViewMode] = useState<"upcoming" | "all">("upcoming");
+  const [calendarView, setCalendarView] = useState<View>(Views.MONTH);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     titre: "",
@@ -137,9 +146,6 @@ export default function CalendarPage() {
   }
 
   const now = new Date();
-  const filteredEvents = viewMode === "upcoming"
-    ? events.filter((e) => e.dateFin >= now)
-    : events;
 
   const getEventTypeColor = (type: EventType) => {
     switch (type) {
@@ -149,6 +155,53 @@ export default function CalendarPage() {
       case "cérémonie": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300";
       case "autre": return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
     }
+  };
+
+  const calendarEvents = events.map((event) => ({
+    id: event.id,
+    title: event.titre,
+    start: event.dateDebut,
+    end: event.dateFin,
+    resource: event,
+  }));
+
+  const eventStyleGetter = (event: any) => {
+    const eventType = event.resource.type;
+    let backgroundColor = "#0A7D33";
+    
+    switch (eventType) {
+      case "réunion":
+        backgroundColor = "#3b82f6";
+        break;
+      case "événement":
+        backgroundColor = "#a855f7";
+        break;
+      case "formation":
+        backgroundColor = "#0A7D33";
+        break;
+      case "cérémonie":
+        backgroundColor = "#ef4444";
+        break;
+      case "autre":
+        backgroundColor = "#6b7280";
+        break;
+    }
+    
+    return {
+      style: {
+        backgroundColor,
+        borderRadius: "4px",
+        opacity: 0.9,
+        color: "white",
+        border: "0px",
+        display: "block",
+      },
+    };
+  };
+
+  const handleSelectEvent = (event: any) => {
+    setSelectedEvent(event.resource);
+    setEventDetailsOpen(true);
   };
 
   if (loading) {
@@ -166,24 +219,14 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold text-foreground">Calendrier</h1>
           <p className="text-muted-foreground">Gestion des événements et réunions du comité</p>
         </div>
-        <div className="flex gap-2">
-          <Select value={viewMode} onValueChange={(v: "upcoming" | "all") => setViewMode(v)}>
-            <SelectTrigger className="w-48 h-12" data-testid="select-view-mode">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="upcoming">À venir</SelectItem>
-              <SelectItem value="all">Tous</SelectItem>
-            </SelectContent>
-          </Select>
-          {canManageEvents && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-add-event">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nouvel Événement
-                </Button>
-              </DialogTrigger>
+        {canManageEvents && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-event">
+                <Plus className="mr-2 h-4 w-4" />
+                Nouvel Événement
+              </Button>
+            </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Créer un événement</DialogTitle>
@@ -290,7 +333,6 @@ export default function CalendarPage() {
               </DialogContent>
             </Dialog>
           )}
-        </div>
       </div>
 
       {/* Stats */}
@@ -298,7 +340,7 @@ export default function CalendarPage() {
         <Card className="hover-elevate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Événements</CardTitle>
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{events.length}</div>
@@ -320,7 +362,7 @@ export default function CalendarPage() {
         <Card className="hover-elevate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ce mois</CardTitle>
-            <Calendar className="h-5 w-5 text-green-600" />
+            <CalendarIcon className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
@@ -334,70 +376,118 @@ export default function CalendarPage() {
         </Card>
       </div>
 
-      {/* Events List */}
-      <div className="grid gap-4">
-        {filteredEvents.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="flex flex-col items-center justify-center text-muted-foreground">
-                <Calendar className="h-12 w-12 mb-4 opacity-50" />
-                <p>Aucun événement {viewMode === "upcoming" ? "à venir" : "trouvé"}</p>
+      {/* Big Calendar View */}
+      <Card className="p-6">
+        <Calendar
+          localizer={localizer}
+          events={calendarEvents}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 600 }}
+          view={calendarView}
+          onView={setCalendarView}
+          onSelectEvent={handleSelectEvent}
+          eventPropGetter={eventStyleGetter}
+          messages={{
+            next: "Suivant",
+            previous: "Précédent",
+            today: "Aujourd'hui",
+            month: "Mois",
+            week: "Semaine",
+            day: "Jour",
+            agenda: "Agenda",
+            date: "Date",
+            time: "Heure",
+            event: "Événement",
+            noEventsInRange: "Aucun événement dans cette période",
+            showMore: (total: number) => `+ ${total} événement(s) supplémentaire(s)`,
+          }}
+          formats={{
+            monthHeaderFormat: "MMMM YYYY",
+            dayHeaderFormat: "dddd D MMMM",
+            dayRangeHeaderFormat: ({ start, end }: any, culture: any, localizer: any) =>
+              localizer?.format(start, "D MMMM", culture) + " - " + localizer?.format(end, "D MMMM YYYY", culture),
+            agendaHeaderFormat: ({ start, end }: any, culture: any, localizer: any) =>
+              localizer?.format(start, "D MMMM", culture) + " - " + localizer?.format(end, "D MMMM YYYY", culture),
+          }}
+        />
+      </Card>
+
+      {/* Event Details Dialog */}
+      <Dialog open={eventDetailsOpen} onOpenChange={setEventDetailsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedEvent?.titre}</DialogTitle>
+            <DialogDescription>Détails de l'événement</DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <div className="space-y-4">
+              <div>
+                <Badge className={getEventTypeColor(selectedEvent.type)}>
+                  {selectedEvent.type}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredEvents.map((event) => (
-            <Card key={event.id} className="hover-elevate" data-testid={`card-event-${event.id}`}>
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground">{event.titre}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
-                      </div>
-                      <Badge className={getEventTypeColor(event.type)}>
-                        {event.type}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {event.dateDebut.toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                      {event.lieu && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.lieu}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>Organisé par {event.organisateurNom}</span>
-                      </div>
-                    </div>
-
-                    {event.dateFin < now && (
-                      <Badge variant="outline" className="bg-gray-100 dark:bg-gray-900/20">
-                        Événement passé
-                      </Badge>
-                    )}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                <p className="text-foreground">{selectedEvent.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Début</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {selectedEvent.dateDebut.toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Fin</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {selectedEvent.dateFin.toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {selectedEvent.lieu && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Lieu</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4" />
+                    <span>{selectedEvent.lieu}</span>
+                  </div>
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Organisateur</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4" />
+                  <span>{selectedEvent.organisateurNom}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEventDetailsOpen(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
