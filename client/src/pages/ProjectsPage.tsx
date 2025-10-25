@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, FolderKanban, Calendar, DollarSign, Users as UsersIcon, TrendingUp, Clock, FileDown, FileText } from "lucide-react";
 import type { Project, ProjectStatus, ProjectPriority } from "@shared/schema";
 import { exportProjectsPDF, exportToCSV } from "@/lib/pdfUtils";
+import { Timestamp, addDoc, collection, db, doc, getDocs, orderBy, query, serverTimestamp, toDate, updateDoc } from '@/lib/firebase-compat';
 
 export default function ProjectsPage() {
   const { userProfile } = useAuth();
@@ -46,26 +47,17 @@ export default function ProjectsPage() {
       const q = query(projectsRef, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       
-      const projectsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        
-        const convertToDate = (field: any): Date => {
-          if (field instanceof Timestamp) {
-            return field.toDate();
-          } else if (typeof field === 'string') {
-            return new Date(field);
-          }
-          return new Date();
-        };
+      const projectsData = snapshot.documents.map((doc) => {
+        const data = doc;
 
         return {
-          id: doc.id,
+          id: doc.$id,
           ...data,
-          dateDebut: convertToDate(data.dateDebut),
-          dateEcheance: convertToDate(data.dateEcheance),
-          dateAchevement: data.dateAchevement ? convertToDate(data.dateAchevement) : undefined,
-          createdAt: convertToDate(data.createdAt),
-          updatedAt: convertToDate(data.updatedAt),
+          dateDebut: toDate(data.dateDebut),
+          dateEcheance: toDate(data.dateEcheance),
+          dateAchevement: data.dateAchevement ? toDate(data.dateAchevement) : undefined,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
         };
       }) as Project[];
 
@@ -98,8 +90,8 @@ export default function ProjectsPage() {
         budgetUtilise: 0,
         responsableId: userProfile.id,
         responsableNom: userProfile.displayName,
-        dateDebut: Timestamp.fromDate(new Date(formData.dateDebut)),
-        dateEcheance: Timestamp.fromDate(new Date(formData.dateEcheance)),
+        dateDebut: new Date(new Date(formData.dateDebut).toISOString()),
+        dateEcheance: new Date(new Date(formData.dateEcheance).toISOString()),
         membresAssignes: [],
         tags: [],
         progression: parseInt(formData.progression),
@@ -107,7 +99,7 @@ export default function ProjectsPage() {
         updatedAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "projects"), projectData);
+      await addDoc("projects", projectData);
 
       toast({
         title: "Projet créé",
@@ -150,7 +142,7 @@ export default function ProjectsPage() {
         updateData.progression = 100;
       }
 
-      await updateDoc(doc(db, "projects", projectId), updateData);
+      await updateDoc(doc("projects", projectId), updateData);
 
       toast({
         title: "Statut mis à jour",

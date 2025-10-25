@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper, BarChart3, LineChart } from "lucide-react";
 import type { Statistics } from "@shared/schema";
 import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { collection, getDocs, query, where, orderBy, limit, db, toDate } from '@/lib/firebase-compat';
 
 export default function DashboardPage() {
   const { userProfile } = useAuth();
@@ -47,27 +48,27 @@ export default function DashboardPage() {
           getDocs(query(collection(db, "payments"), where("statut", "==", "validé"))),
           getDocs(collection(db, "families")),
           getDocs(query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(100))),
-          getDocs(collection(db, "blog")),
+          getDocs(collection(db, "blog-posts")),
           getDocs(collection(db, "projects")),
           getDocs(query(collection(db, "projects"), where("statut", "==", "en_cours"))),
           getDocs(query(collection(db, "projects"), where("statut", "==", "terminé"))),
-          getDocs(collection(db, "budget_transactions")),
+          getDocs(collection(db, "budget")),
         ]);
 
-        const totalAmount = paymentsSnap.docs.reduce((sum, doc) => sum + (doc.data().montant || 0), 0);
+        const totalAmount = paymentsSnap.documents.reduce((sum, doc) => sum + (doc.montant || 0), 0);
 
         setStats({
-          totalMembers: usersSnap.size,
-          totalPayments: paymentsSnap.size,
-          pendingPayments: pendingSnap.size,
-          validatedPayments: validatedSnap.size,
+          totalMembers: usersSnap.total,
+          totalPayments: paymentsSnap.total,
+          pendingPayments: pendingSnap.total,
+          validatedPayments: validatedSnap.total,
           totalAmount,
-          totalFamilies: familiesSnap.size,
-          totalMessages: messagesSnap.size,
-          totalBlogPosts: blogSnap.size,
-          totalProjects: projectsSnap.size,
-          activeProjects: activeProjectsSnap.size,
-          completedProjects: completedProjectsSnap.size,
+          totalFamilies: familiesSnap.total,
+          totalMessages: messagesSnap.total,
+          totalBlogPosts: blogSnap.total,
+          totalProjects: projectsSnap.total,
+          activeProjects: activeProjectsSnap.total,
+          completedProjects: completedProjectsSnap.total,
         });
 
         // Projects by status
@@ -78,8 +79,8 @@ export default function DashboardPage() {
           "terminé": 0,
           "archivé": 0,
         };
-        projectsSnap.docs.forEach((doc) => {
-          const status = doc.data().statut;
+        projectsSnap.documents.forEach((doc) => {
+          const status = doc.statut;
           if (projectsStatusMap[status] !== undefined) {
             projectsStatusMap[status]++;
           }
@@ -99,9 +100,9 @@ export default function DashboardPage() {
           monthlyPayments[monthKey] = 0;
         }
 
-        paymentsSnap.docs.forEach((doc) => {
-          const data = doc.data();
-          const paymentDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date);
+        paymentsSnap.documents.forEach((doc) => {
+          const data = doc;
+          const paymentDate = new Date(data.date);
           const monthKey = paymentDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
           if (monthlyPayments[monthKey] !== undefined) {
             monthlyPayments[monthKey] += data.montant || 0;
@@ -122,9 +123,9 @@ export default function DashboardPage() {
           monthlyBudget[monthKey] = { revenus: 0, dépenses: 0 };
         }
 
-        budgetSnap.docs.forEach((doc) => {
-          const data = doc.data();
-          const transactionDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date);
+        budgetSnap.documents.forEach((doc) => {
+          const data = doc;
+          const transactionDate = new Date(data.date);
           const monthKey = transactionDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
           if (monthlyBudget[monthKey]) {
             if (data.type === "revenu") {

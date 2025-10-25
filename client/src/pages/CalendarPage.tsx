@@ -16,6 +16,7 @@ import moment from "moment";
 import "moment/locale/fr";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { exportToCSV } from "@/lib/pdfUtils";
+import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
 
 moment.locale("fr");
 const localizer = momentLocalizer(moment);
@@ -48,28 +49,17 @@ export default function CalendarPage() {
 
   async function fetchEvents() {
     try {
-      const eventsRef = collection(db, "events");
+      const eventsRef = "events";
       const q = query(eventsRef, orderBy("dateDebut", "desc"));
-      const snapshot = await getDocs(q);
-
-      const convertToDate = (field: any): Date => {
-        if (field instanceof Timestamp) {
-          return field.toDate();
-        } else if (typeof field === 'string') {
-          return new Date(field);
-        }
-        return new Date();
-      };
-
-      const eventsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
+      const snapshot = await getDocs(q);      const eventsData = snapshot.documents.map((doc) => {
+        const data = doc;
         return {
-          id: doc.id,
+          id: doc.$id,
           ...data,
-          dateDebut: convertToDate(data.dateDebut),
-          dateFin: convertToDate(data.dateFin),
-          createdAt: convertToDate(data.createdAt),
-          updatedAt: convertToDate(data.updatedAt),
+          dateDebut: toDate(data.dateDebut),
+          dateFin: toDate(data.dateFin),
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
         };
       }) as CalendarEvent[];
 
@@ -105,8 +95,8 @@ export default function CalendarPage() {
         titre: formData.titre,
         description: formData.description,
         type: formData.type,
-        dateDebut: Timestamp.fromDate(new Date(formData.dateDebut)),
-        dateFin: Timestamp.fromDate(new Date(formData.dateFin)),
+        dateDebut: new Date(new Date(formData.dateDebut).toISOString()),
+        dateFin: new Date(new Date(formData.dateFin).toISOString()),
         lieu: formData.lieu,
         organisateurId: userProfile.id,
         organisateurNom: userProfile.displayName,
@@ -115,7 +105,7 @@ export default function CalendarPage() {
         updatedAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "events"), eventData);
+      await addDoc("events", eventData);
 
       toast({
         title: "Événement créé",

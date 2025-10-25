@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Video, Upload, Trash2, Play, Pause } from "lucide-react";
 import type { Advertisement } from "@shared/schema";
+import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes } from '@/lib/firebase-compat';
 
 export default function AdsPage() {
   const { toast } = useToast();
@@ -28,14 +29,14 @@ export default function AdsPage() {
 
   async function fetchAds() {
     try {
-      const adsRef = collection(db, "advertisements");
+      const adsRef = "ads";
       const q = query(adsRef, orderBy("order", "asc"));
 
       const snapshot = await getDocs(q);
-      const adsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      const adsData = snapshot.documents.map((doc) => ({
+        id: doc.$id,
+        ...doc,
+        createdAt: toDate(doc.createdAt) || new Date(),
       })) as Advertisement[];
 
       setAds(adsData);
@@ -78,7 +79,7 @@ export default function AdsPage() {
         createdAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, "advertisements"), adData);
+      await addDoc("ads", adData);
 
       toast({
         title: "Publicité ajoutée",

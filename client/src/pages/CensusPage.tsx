@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Users, Trash2, Edit } from "lucide-react";
 import type { Family, FamilyMember } from "@shared/schema";
+import { addDoc, db, deleteDoc, doc, getDocs, query, toDate } from '@/lib/firebase-compat';
 
 export default function CensusPage() {
   const { userProfile } = useAuth();
@@ -34,7 +35,7 @@ export default function CensusPage() {
 
   async function fetchFamilies() {
     try {
-      const familiesRef = collection(db, "families");
+      const familiesRef = "families";
       let q = query(familiesRef);
       
       if (userProfile?.role === "membre") {
@@ -42,15 +43,15 @@ export default function CensusPage() {
       }
 
       const snapshot = await getDocs(q);
-      const familiesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        membres: doc.data().membres?.map((m: any) => ({
+      const familiesData = snapshot.documents.map((doc) => ({
+        id: doc.$id,
+        ...doc,
+        membres: doc.membres?.map((m: any) => ({
           ...m,
           dateNaissance: m.dateNaissance ? new Date(m.dateNaissance) : undefined,
         })) || [],
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+        createdAt: toDate(doc.createdAt) || new Date(),
+        updatedAt: toDate(doc.updatedAt) || new Date(),
       })) as Family[];
 
       setFamilies(familiesData);
@@ -127,7 +128,7 @@ export default function CensusPage() {
         updatedAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, "families"), familyData);
+      await addDoc("families", familyData);
 
       toast({
         title: "Famille enregistrée",

@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Send, MessageSquare } from "lucide-react";
 import type { Message } from "@shared/schema";
+import { Timestamp, addDoc, limit, onSnapshot, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
 
 export default function ChatPage() {
   const { userProfile } = useAuth();
@@ -18,25 +19,25 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const messagesRef = collection(db, "messages");
+    const messagesRef = "messages";
     const q = query(messagesRef, orderBy("timestamp", "desc"), limit(100));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messagesData = snapshot.docs
+      const messagesData = snapshot.documents
         .map((doc) => {
-          const data = doc.data();
+          const data = doc;
           let timestamp = new Date();
           
           if (data.timestamp) {
-            if (data.timestamp instanceof Timestamp) {
-              timestamp = data.timestamp.toDate();
+            if (new Date(data.timestamp)) {
+              timestamp = toDate(data.timestamp);
             } else if (typeof data.timestamp === 'string') {
               timestamp = new Date(data.timestamp);
             }
           }
           
           return {
-            id: doc.id,
+            id: doc.$id,
             ...data,
             timestamp,
           };
@@ -60,7 +61,7 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      await addDoc(collection(db, "messages"), {
+      await addDoc("messages", {
         senderId: userProfile.id,
         senderName: userProfile.displayName,
         senderPhotoURL: userProfile.photoURL || "",

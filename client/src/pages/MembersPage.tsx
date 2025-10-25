@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Search, UserCog, Mail, Phone, Calendar, Download } from "lucide-react";
 import type { User, UserRole } from "@shared/schema";
 import { exportToCSV } from "@/lib/pdfUtils";
+import { db, doc, getDocs, query, toDate, updateDoc } from '@/lib/firebase-compat';
 
 export default function MembersPage() {
   const { userProfile } = useAuth();
@@ -33,14 +34,14 @@ export default function MembersPage() {
 
   async function fetchMembers() {
     try {
-      const membersRef = collection(db, "users");
+      const membersRef = "users";
       const q = query(membersRef, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       
-      const membersData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      const membersData = snapshot.documents.map((doc) => ({
+        id: doc.$id,
+        ...doc,
+        createdAt: toDate(doc.createdAt) || new Date(),
       })) as User[];
 
       setMembers(membersData);

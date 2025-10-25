@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, TrendingDown, Plus, DollarSign, Calendar, Filter, FileDown, FileText } from "lucide-react";
 import type { BudgetTransaction, TransactionType, TransactionCategory } from "@shared/schema";
 import { exportBudgetPDF, exportToCSV } from "@/lib/pdfUtils";
+import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
 
 export default function BudgetPage() {
   const { userProfile } = useAuth();
@@ -40,26 +41,15 @@ export default function BudgetPage() {
 
   async function fetchTransactions() {
     try {
-      const transactionsRef = collection(db, "budget_transactions");
+      const transactionsRef = "budget";
       const q = query(transactionsRef, orderBy("date", "desc"));
-      const snapshot = await getDocs(q);
-
-      const convertToDate = (field: any): Date => {
-        if (field instanceof Timestamp) {
-          return field.toDate();
-        } else if (typeof field === 'string') {
-          return new Date(field);
-        }
-        return new Date();
-      };
-
-      const transactionsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
+      const snapshot = await getDocs(q);      const transactionsData = snapshot.documents.map((doc) => {
+        const data = doc;
         return {
-          id: doc.id,
+          id: doc.$id,
           ...data,
-          date: convertToDate(data.date),
-          createdAt: convertToDate(data.createdAt),
+          date: toDate(data.date),
+          createdAt: toDate(data.createdAt),
         };
       }) as BudgetTransaction[];
 
@@ -96,13 +86,13 @@ export default function BudgetPage() {
         montant: parseFloat(formData.montant),
         categorie: formData.categorie,
         description: formData.description,
-        date: Timestamp.fromDate(new Date(formData.date)),
+        date: new Date(new Date(formData.date).toISOString()),
         creePar: userProfile.id,
         creeParNom: userProfile.displayName,
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "budget_transactions"), transactionData);
+      await addDoc("budget", transactionData);
 
       toast({
         title: "Transaction ajoutée",

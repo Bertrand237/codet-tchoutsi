@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download, FileDown } from "lucide-react";
 import type { Payment, PaymentMode, InsertPayment } from "@shared/schema";
 import { exportPaymentsPDF, exportToCSV } from "@/lib/pdfUtils";
+import { addDoc, collection, db, doc, getDocs, getDownloadURL, orderBy, query, ref, storage, toDate, updateDoc, uploadBytes, where } from '@/lib/firebase-compat';
 
 export default function PaymentsPage() {
   const { userProfile } = useAuth();
@@ -40,12 +41,12 @@ export default function PaymentsPage() {
       }
 
       const snapshot = await getDocs(q);
-      const paymentsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate() || new Date(),
-        dateValidation: doc.data().dateValidation?.toDate(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      const paymentsData = snapshot.documents.map((doc) => ({
+        id: doc.$id,
+        ...doc,
+        date: toDate(doc.date) || new Date(),
+        dateValidation: toDate(doc.dateValidation),
+        createdAt: toDate(doc.createdAt) || new Date(),
       })) as Payment[];
 
       setPayments(paymentsData);
@@ -88,7 +89,7 @@ export default function PaymentsPage() {
         statut: "en_attente",
       };
 
-      await addDoc(collection(db, "payments"), paymentData);
+      await addDoc("payments", paymentData);
 
       toast({
         title: "Paiement enregistré",
@@ -115,7 +116,7 @@ export default function PaymentsPage() {
     if (!userProfile) return;
 
     try {
-      await updateDoc(doc(db, "payments", paymentId), {
+      await updateDoc(doc("payments", paymentId), {
         statut: status,
         validePar: userProfile.id,
         dateValidation: new Date().toISOString(),

@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Vote, Plus, Users, CheckCircle, Calendar } from "lucide-react";
 import type { Poll, PollOption } from "@shared/schema";
+import { Timestamp, addDoc, arrayUnion, db, doc, getDocs, query, serverTimestamp, toDate, updateDoc } from '@/lib/firebase-compat';
 
 export default function VotesPage() {
   const { userProfile } = useAuth();
@@ -36,27 +37,16 @@ export default function VotesPage() {
 
   async function fetchPolls() {
     try {
-      const pollsRef = collection(db, "polls");
+      const pollsRef = "polls";
       const q = query(pollsRef, orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
-
-      const convertToDate = (field: any): Date => {
-        if (field instanceof Timestamp) {
-          return field.toDate();
-        } else if (typeof field === 'string') {
-          return new Date(field);
-        }
-        return new Date();
-      };
-
-      const pollsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
+      const snapshot = await getDocs(q);      const pollsData = snapshot.documents.map((doc) => {
+        const data = doc;
         return {
-          id: doc.id,
+          id: doc.$id,
           ...data,
-          dateDebut: convertToDate(data.dateDebut),
-          dateFin: convertToDate(data.dateFin),
-          createdAt: convertToDate(data.createdAt),
+          dateDebut: toDate(data.dateDebut),
+          dateFin: toDate(data.dateFin),
+          createdAt: toDate(data.createdAt),
         };
       }) as Poll[];
 
@@ -108,14 +98,14 @@ export default function VotesPage() {
         })),
         creePar: userProfile.id,
         creeParNom: userProfile.displayName,
-        dateDebut: Timestamp.fromDate(new Date(formData.dateDebut)),
-        dateFin: Timestamp.fromDate(new Date(formData.dateFin)),
+        dateDebut: new Date(new Date(formData.dateDebut).toISOString()),
+        dateFin: new Date(new Date(formData.dateFin).toISOString()),
         actif: true,
         votants: [],
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "polls"), pollData);
+      await addDoc("polls", pollData);
 
       toast({
         title: "Sondage créé",

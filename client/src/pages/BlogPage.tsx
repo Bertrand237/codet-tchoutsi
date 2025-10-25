@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Newspaper, Upload, Calendar } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
+import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes } from '@/lib/firebase-compat';
 
 export default function BlogPage() {
   const { userProfile } = useAuth();
@@ -34,7 +35,7 @@ export default function BlogPage() {
 
   async function fetchPosts() {
     try {
-      const postsRef = collection(db, "blog");
+      const postsRef = "blog-posts";
       let q = query(postsRef, orderBy("createdAt", "desc"));
       
       if (!canManageBlog) {
@@ -42,12 +43,12 @@ export default function BlogPage() {
       }
 
       const snapshot = await getDocs(q);
-      const postsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        publishedAt: doc.data().publishedAt?.toDate(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+      const postsData = snapshot.documents.map((doc) => ({
+        id: doc.$id,
+        ...doc,
+        publishedAt: toDate(doc.publishedAt),
+        createdAt: toDate(doc.createdAt) || new Date(),
+        updatedAt: toDate(doc.updatedAt) || new Date(),
       })) as BlogPost[];
 
       setPosts(postsData);
@@ -91,7 +92,7 @@ export default function BlogPage() {
         updatedAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, "blog"), postData);
+      await addDoc("blog-posts", postData);
 
       toast({
         title: "Article créé",
