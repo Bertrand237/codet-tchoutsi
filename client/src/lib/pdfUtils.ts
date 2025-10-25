@@ -141,7 +141,7 @@ export function exportBudgetPDF(transactions: any[]) {
   
   // Tableau des transactions
   const tableData = transactions.map(t => [
-    t.date ? new Date(t.date.seconds ? t.date.seconds * 1000 : t.date).toLocaleDateString("fr-FR") : "N/A",
+    t.date ? new Date(t.date).toLocaleDateString("fr-FR") : "N/A",
     t.type === "revenu" ? "Revenu" : "Dépense",
     t.categorie || "N/A",
     t.description || "N/A",
@@ -254,9 +254,9 @@ export function exportToCSV(data: any[], filename: string, headers: { [key: stri
     return Object.keys(headers).map(key => {
       let value = item[key];
       
-      // Gérer les dates Firestore
-      if (value && typeof value === 'object' && value.seconds) {
-        value = new Date(value.seconds * 1000).toLocaleDateString("fr-FR");
+      // Gérer les dates (ISO strings ou Date objects)
+      if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+        value = new Date(value).toLocaleDateString("fr-FR");
       } else if (value instanceof Date) {
         value = value.toLocaleDateString("fr-FR");
       }
