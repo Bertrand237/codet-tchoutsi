@@ -2,6 +2,7 @@ import {
   Home,
   Users,
   CreditCard,
+  Wallet,
   UsersRound,
   MessageSquare,
   Newspaper,
@@ -45,6 +46,24 @@ const menuItems = [
     url: "/members",
     icon: Users,
     roles: ["admin", "président", "trésorier", "commissaire"],
+  },
+  {
+    title: "Budget",
+    url: "/budget",
+    icon: Wallet,
+    roles: ["admin", "président", "trésorier"],
+  },
+  {
+    title: "Calendrier",
+    url: "/calendar",
+    icon: BarChart3,
+    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+  },
+  {
+    title: "Votes",
+    url: "/votes",
+    icon: Video,
+    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Paiements",

@@ -191,6 +191,57 @@ export type BudgetTransaction = z.infer<typeof budgetTransactionSchema>;
 export const insertBudgetTransactionSchema = budgetTransactionSchema.omit({ id: true, createdAt: true });
 export type InsertBudgetTransaction = z.infer<typeof insertBudgetTransactionSchema>;
 
+// Event schema (calendar)
+export const eventTypes = ["réunion", "événement", "formation", "cérémonie", "autre"] as const;
+export type EventType = typeof eventTypes[number];
+
+export const eventSchema = z.object({
+  id: z.string(),
+  titre: z.string(),
+  description: z.string(),
+  type: z.enum(eventTypes),
+  dateDebut: z.date(),
+  dateFin: z.date(),
+  lieu: z.string().optional(),
+  organisateurId: z.string(),
+  organisateurNom: z.string(),
+  participantsIds: z.array(z.string()).optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type Event = z.infer<typeof eventSchema>;
+
+export const insertEventSchema = eventSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+
+// Poll/Vote schema
+export const pollOptionSchema = z.object({
+  id: z.string(),
+  texte: z.string(),
+  votes: z.number(),
+});
+
+export const pollSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  description: z.string().optional(),
+  options: z.array(pollOptionSchema),
+  creePar: z.string(),
+  creeParNom: z.string(),
+  dateDebut: z.date(),
+  dateFin: z.date(),
+  actif: z.boolean(),
+  votants: z.array(z.string()).optional(), // User IDs who voted
+  createdAt: z.date(),
+});
+
+export type Poll = z.infer<typeof pollSchema>;
+export type PollOption = z.infer<typeof pollOptionSchema>;
+
+export const insertPollSchema = pollSchema.omit({ id: true, createdAt: true, votants: true });
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+
 // Statistics schema for dashboard
 export const statisticsSchema = z.object({
   totalMembers: z.number(),

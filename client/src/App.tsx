@@ -15,6 +15,8 @@ import DashboardPage from "@/pages/DashboardPage";
 import ProjectsPage from "@/pages/ProjectsPage";
 import MembersPage from "@/pages/MembersPage";
 import BudgetPage from "@/pages/BudgetPage";
+import CalendarPage from "@/pages/CalendarPage";
+import VotesPage from "@/pages/VotesPage";
 import PaymentsPage from "@/pages/PaymentsPage";
 import CensusPage from "@/pages/CensusPage";
 import ChatPage from "@/pages/ChatPage";
@@ -89,6 +91,18 @@ function AuthenticatedRouter() {
               <Route path="/budget">
                 <ProtectedRoute allowedRoles={["admin", "président", "trésorier"]}>
                   <BudgetPage />
+                </ProtectedRoute>
+              </Route>
+
+              <Route path="/calendar">
+                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                  <CalendarPage />
+                </ProtectedRoute>
+              </Route>
+
+              <Route path="/votes">
+                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                  <VotesPage />
                 </ProtectedRoute>
               </Route>
 

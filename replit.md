@@ -48,6 +48,43 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 - Gestion de l'ordre d'affichage
 - Activation/désactivation des publicités
 
+### 8. Gestion des Projets (Firestore)
+- Création et suivi de projets du comité
+- Statuts : planifié, en_cours, en_pause, terminé, archivé
+- Suivi du budget et de la progression
+- Attribution de responsables et membres
+- Filtres et recherche avancée
+
+### 9. Gestion des Membres (Firestore)
+- Administration complète des utilisateurs
+- Modification des rôles (admin/président)
+- Recherche et filtres par rôle
+- Statistiques des membres
+- Vue détaillée avec historique
+
+### 10. Gestion Budgétaire (Firestore)
+- Enregistrement des transactions (revenus/dépenses)
+- Catégories : cotisations, dons, événements, projets, etc.
+- Calcul automatique du solde
+- Statistiques financières en temps réel
+- Filtres par type et catégorie
+- Accessible par admin/président/trésorier
+
+### 11. Calendrier des Événements (Firestore)
+- Création d'événements et réunions
+- Types : réunion, événement, formation, cérémonie
+- Vue liste des événements (à venir / tous)
+- Gestion des dates et lieux
+- Statistiques des événements
+
+### 12. Système de Votes et Sondages (Firestore)
+- Création de sondages par admin/président
+- Options multiples de réponse
+- Vote unique par membre
+- Résultats en temps réel avec pourcentages
+- États actif/terminé automatiques
+- Protection contre les votes multiples (côté client)
+
 ## Collections Firestore
 
 ### users
@@ -142,6 +179,85 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 }
 ```
 
+### projects
+```typescript
+{
+  id: string,
+  titre: string,
+  description: string,
+  statut: "planifié" | "en_cours" | "en_pause" | "terminé" | "archivé",
+  priorite: "basse" | "moyenne" | "haute" | "urgente",
+  budget?: number,
+  budgetUtilise?: number,
+  responsableId: string,
+  responsableNom: string,
+  dateDebut: Timestamp,
+  dateEcheance: Timestamp,
+  dateAchevement?: Timestamp,
+  membresAssignes?: string[],
+  tags?: string[],
+  progression: number, // 0-100%
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+```
+
+### budget_transactions
+```typescript
+{
+  id: string,
+  type: "revenu" | "dépense",
+  montant: number,
+  categorie: "cotisations" | "dons" | "événements" | "projets" | "fonctionnement" | "salaires" | "fournitures" | "communication" | "autre",
+  description: string,
+  date: Timestamp,
+  projetId?: string,
+  projetNom?: string,
+  creePar: string,
+  creeParNom: string,
+  createdAt: Timestamp
+}
+```
+
+### events
+```typescript
+{
+  id: string,
+  titre: string,
+  description: string,
+  type: "réunion" | "événement" | "formation" | "cérémonie" | "autre",
+  dateDebut: Timestamp,
+  dateFin: Timestamp,
+  lieu?: string,
+  organisateurId: string,
+  organisateurNom: string,
+  participantsIds?: string[],
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+```
+
+### polls
+```typescript
+{
+  id: string,
+  question: string,
+  description?: string,
+  options: Array<{
+    id: string,
+    texte: string,
+    votes: number
+  }>,
+  creePar: string,
+  creeParNom: string,
+  dateDebut: Timestamp,
+  dateFin: Timestamp,
+  actif: boolean,
+  votants?: string[], // User IDs who voted
+  createdAt: Timestamp
+}
+```
+
 ## Firebase Storage Structure
 ```
 /preuves/           # Preuves de paiement (images/PDF)
@@ -167,7 +283,11 @@ VITE_FIREBASE_PROJECT_ID
 | Fonctionnalité | Admin | Président | Trésorier | Commissaire | Membre | Visiteur |
 |----------------|-------|-----------|-----------|-------------|--------|----------|
 | Dashboard      | ✓     | ✓         | ✓         | ✓           | ✓      | ✓        |
-| Membres        | ✓     | ✓         | ✓         | ✓           | -      | -        |
+| Projets        | ✓     | ✓         | ✓         | ✓           | ✓ (lecture) | -   |
+| Membres (admin)| ✓     | ✓         | ✓ (lecture) | ✓ (lecture) | -    | -        |
+| Budget         | ✓     | ✓         | ✓         | -           | -      | -        |
+| Calendrier     | ✓     | ✓         | ✓         | ✓           | ✓      | -        |
+| Votes          | ✓     | ✓         | ✓         | ✓           | ✓      | -        |
 | Paiements      | ✓     | ✓         | ✓         | ✓           | ✓      | -        |
 | Validation     | ✓     | -         | -         | ✓           | -      | -        |
 | Recensement    | ✓     | ✓         | ✓         | ✓           | ✓      | -        |
@@ -175,7 +295,6 @@ VITE_FIREBASE_PROJECT_ID
 | Blog           | ✓     | ✓         | ✓         | ✓           | ✓      | ✓        |
 | Gestion Blog   | ✓     | ✓         | -         | -           | -      | -        |
 | Publicités     | ✓     | ✓         | -         | -           | -      | -        |
-| Statistiques   | ✓     | ✓         | ✓         | -           | -      | -        |
 
 ## Déploiement
 L'application est prête pour le déploiement sur Firebase Hosting ou Replit.
@@ -186,24 +305,32 @@ L'application est prête pour le déploiement sur Firebase Hosting ou Replit.
 ## État du Projet
 - ✅ Authentification Firebase complète
 - ✅ Interface utilisateur moderne avec sidebar
+- ✅ Gestion des projets avec CRUD complet
+- ✅ Gestion des membres et rôles
+- ✅ Gestion budgétaire (revenus/dépenses)
+- ✅ Calendrier des événements
+- ✅ Système de votes et sondages
 - ✅ Gestion des paiements avec validation
 - ✅ Recensement familial
 - ✅ Messagerie en temps réel (avec serverTimestamp)
 - ✅ Blog public administrable
 - ✅ Gestion des publicités vidéo
+- ✅ Dashboard avec statistiques réelles en temps réel
 - ✅ Système de permissions par rôle
 - ✅ Mode sombre
 - ✅ Design responsive
 - ✅ Règles de sécurité Firestore et Storage complètes
 - ✅ Configuration Firebase correcte (.appspot.com)
+- ✅ Utilisation correcte des Timestamps Firestore (serverTimestamp)
 
 ## Notes Techniques Importantes
 
 ### Gestion des Timestamps Firestore
-L'application utilise `serverTimestamp()` pour les messages du chat, ce qui garantit :
+L'application utilise systématiquement `serverTimestamp()` et `Timestamp.fromDate()` pour toutes les collections, ce qui garantit :
 - Timestamps cohérents côté serveur
 - Pas de problèmes de synchronisation entre clients
 - Gestion correcte des fuseaux horaires
+- Fonction helper `convertToDate()` pour gérer les deux formats (Timestamp et legacy ISO strings)
 
 ### Politique de Suppression Storage
 Les règles Storage sont configurées avec `allow delete: if false` pour :
@@ -218,11 +345,36 @@ Les suppressions doivent être effectuées via la Console Firebase par les admin
 - Auth domain : `${PROJECT_ID}.firebaseapp.com`
 - Tous les services (Auth, Firestore, Storage) fonctionnent avec cette configuration
 
+## Limitations Connues et Améliorations Futures
+
+### Système de Vote
+**Limitation**: Le système de vote actuel utilise uniquement les règles de sécurité Firestore côté client, ce qui a des limitations :
+- Les règles Firestore ne peuvent pas appliquer des opérations atomiques strictes (arrayUnion, increment) uniquement côté règles
+- Un utilisateur malveillant pourrait potentiellement manipuler les votes en contournant le client
+
+**Solution Recommandée**:
+- Implémenter Firebase Cloud Functions pour gérer les votes côté serveur
+- La fonction vérifierait l'intégrité, enregistrerait le vote de manière atomique
+- Plus sécurisé et permet une logique de validation complexe
+
+### Calendrier
+**Limitation**: Le calendrier actuel offre une vue liste fonctionnelle mais manque :
+- Vues mensuelles/hebdomadaires avec grille visuelle
+- Système de rappels/notifications
+
+**Solution Recommandée**:
+- Installer `react-big-calendar` ou bibliothèque similaire pour vues avancées
+- Implémenter Firebase Cloud Messaging pour notifications de rappels
+
 ## Prochaines Étapes Recommandées
 1. ✅ Règles de sécurité Firestore et Storage configurées
 2. Déployer les règles sur Firebase Console
-3. Créer le premier utilisateur admin
-4. Ajouter Firebase Cloud Functions pour notifications email
-5. Implémenter le module statistiques avancées (graphiques)
-6. Ajouter la gestion des membres (CRUD complet)
-7. Implémenter Firebase Cloud Messaging pour notifications push
+3. Créer le premier utilisateur admin via Firebase Console
+4. **[Priorité Haute]** Ajouter Firebase Cloud Functions pour :
+   - Sécuriser le système de vote (votes atomiques)
+   - Notifications email pour événements importants
+   - Rappels automatiques pour calendrier
+5. **[Optionnel]** Installer `react-big-calendar` pour vues calendrier avancées
+6. **[Optionnel]** Implémenter export PDF avec `jspdf` pour rapports
+7. **[Optionnel]** Firebase Cloud Messaging pour notifications push
+8. **[Optionnel]** Graphiques avancés avec recharts pour statistiques

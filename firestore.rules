@@ -163,5 +163,64 @@ service cloud.firestore {
       // Only admin can delete projects
       allow delete: if hasRole('admin');
     }
+    
+    // Budget transactions collection
+    match /budget_transactions/{transactionId} {
+      // Admin, président, and trésorier can read all transactions
+      allow read: if isAuthenticated() &&
+                     hasAnyRole(['admin', 'président', 'trésorier']);
+      
+      // Only admin, président, and trésorier can create transactions
+      allow create: if isAuthenticated() &&
+                      hasAnyRole(['admin', 'président', 'trésorier']) &&
+                      request.resource.data.creePar == request.auth.uid;
+      
+      // Only admin can update or delete transactions
+      allow update, delete: if hasRole('admin');
+    }
+    
+    // Events collection (calendar)
+    match /events/{eventId} {
+      // All members can read events
+      allow read: if isAuthenticated() &&
+                     hasAnyRole(['membre', 'admin', 'président', 'trésorier', 'commissaire']);
+      
+      // Only admin and président can create events
+      allow create: if isAdminOrPresident() &&
+                      request.resource.data.organisateurId == request.auth.uid;
+      
+      // Only admin and président can update/delete events
+      allow update, delete: if isAdminOrPresident();
+    }
+    
+    // Polls collection (voting)
+    match /polls/{pollId} {
+      // All members can read polls
+      allow read: if isAuthenticated() &&
+                     hasAnyRole(['membre', 'admin', 'président', 'trésorier', 'commissaire']);
+      
+      // Only admin and président can create polls
+      allow create: if isAdminOrPresident() &&
+                      request.resource.data.creePar == request.auth.uid;
+      
+      // Members can update to vote - with security checks
+      // - Must be active poll
+      // - User must not have already voted
+      // - Can only add their ID to votants (using arrayUnion)
+      // - Core fields cannot be changed
+      allow update: if isAuthenticated() &&
+                      hasAnyRole(['membre', 'admin', 'président', 'trésorier', 'commissaire']) &&
+                      resource.data.actif == true &&
+                      !(request.auth.uid in resource.data.votants) &&
+                      request.resource.data.question == resource.data.question &&
+                      request.resource.data.creePar == resource.data.creePar &&
+                      request.resource.data.actif == resource.data.actif;
+      
+      // Admin and président can update poll status (activate/deactivate)
+      allow update: if isAdminOrPresident();
+      
+      // Only admin can delete polls
+      allow delete: if hasRole('admin');
+    }
   }
 }
