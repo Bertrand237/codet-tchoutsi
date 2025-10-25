@@ -118,3 +118,15 @@ Required secrets in Replit:
     - Created diagnostic/migration scripts: `check-attributes.ts`, `add-missing-attributes.ts`, `add-boolean-attributes.ts`, `fix-blog-schema.ts`
   - ✅ Application successfully compiles and runs without errors
   - ✅ All schema-code mismatches resolved and verified by architect review
+  - ✅ **Additional Fixes** (2025-10-25):
+    - Fixed ChatPage: added missing `orderBy` import
+    - Fixed PaymentsPage: re-added `userName` attribute to schema and persist user name with payments
+    - Fixed CalendarPage: 
+      * Added missing attributes to events schema (type, organisateurNom, participantsIds)
+      * Corrected all field names (dateDebut/dateFin → startDate/endDate, titre → title, lieu → location, organisateurId → createdBy)
+      * Properly persist and hydrate all event fields including type with JSON serialization for arrays
+    - Fixed CensusPage: 
+      * Fixed query filter to use `createdBy` instead of `membreId`
+      * Corrected all field names (membreId/membreNom/adresse/telephone/membres → familyName/headOfFamily/address/phone/members)
+      * Implemented JSON serialization for members array
+    - Created migration scripts: `fix-events-schema.ts`, `add-username-to-payments.ts`

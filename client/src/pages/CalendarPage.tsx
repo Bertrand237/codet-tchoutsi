@@ -36,8 +36,8 @@ export default function CalendarPage() {
     titre: "",
     description: "",
     type: "réunion" as EventType,
-    dateDebut: "",
-    dateFin: "",
+    startDate: "",
+    endDate: "",
     lieu: "",
   });
 
@@ -50,16 +50,22 @@ export default function CalendarPage() {
   async function fetchEvents() {
     try {
       const eventsRef = "events";
-      const q = query(eventsRef, orderBy("dateDebut", "desc"));
+      const q = query(eventsRef, orderBy("startDate", "desc"));
       const snapshot = await getDocs(q);      const eventsData = snapshot.documents.map((doc) => {
         const data = doc;
         return {
           id: doc.$id,
-          ...data,
-          dateDebut: toDate(data.dateDebut),
-          dateFin: toDate(data.dateFin),
+          titre: data.title || "",
+          description: data.description || "",
+          type: (data.type as EventType) || "événement",
+          dateDebut: toDate(data.startDate),
+          dateFin: toDate(data.endDate),
+          lieu: data.location || "",
+          organisateurId: data.createdBy || "",
+          organisateurNom: data.organisateurNom || "",
+          participantsIds: [],
           createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
+          updatedAt: toDate(data.createdAt),
         };
       }) as CalendarEvent[];
 
@@ -92,17 +98,16 @@ export default function CalendarPage() {
 
     try {
       const eventData = {
-        titre: formData.titre,
+        title: formData.titre,
         description: formData.description,
         type: formData.type,
-        dateDebut: new Date(new Date(formData.dateDebut).toISOString()),
-        dateFin: new Date(new Date(formData.dateFin).toISOString()),
-        lieu: formData.lieu,
-        organisateurId: userProfile.id,
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: new Date(formData.endDate).toISOString(),
+        location: formData.lieu,
+        createdBy: userProfile.id,
         organisateurNom: userProfile.displayName,
-        participantsIds: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        participantsIds: JSON.stringify([]),
+        createdAt: new Date().toISOString(),
       };
 
       await addDoc("events", eventData);
@@ -117,8 +122,8 @@ export default function CalendarPage() {
         titre: "",
         description: "",
         type: "réunion",
-        dateDebut: "",
-        dateFin: "",
+        startDate: "",
+        endDate: "",
         lieu: "",
       });
       fetchEvents();
@@ -285,25 +290,25 @@ export default function CalendarPage() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="dateDebut">Date début *</Label>
+                        <Label htmlFor="startDate">Date début *</Label>
                         <Input
-                          id="dateDebut"
+                          id="startDate"
                           type="datetime-local"
                           required
-                          value={formData.dateDebut}
-                          onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
+                          value={formData.startDate}
+                          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                           className="h-12"
                           data-testid="input-date-debut"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="dateFin">Date fin *</Label>
+                        <Label htmlFor="endDate">Date fin *</Label>
                         <Input
-                          id="dateFin"
+                          id="endDate"
                           type="datetime-local"
                           required
-                          value={formData.dateFin}
-                          onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
+                          value={formData.endDate}
+                          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                           className="h-12"
                           data-testid="input-date-fin"
                         />

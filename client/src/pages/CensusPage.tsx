@@ -39,20 +39,33 @@ export default function CensusPage() {
       let q = query(familiesRef);
       
       if (userProfile?.role === "membre") {
-        q = query(familiesRef, where("membreId", "==", userProfile.id));
+        q = query(familiesRef, where("createdBy", "==", userProfile.id));
       }
 
       const snapshot = await getDocs(q);
-      const familiesData = snapshot.documents.map((doc) => ({
-        id: doc.$id,
-        ...doc,
-        membres: doc.membres?.map((m: any) => ({
-          ...m,
-          dateNaissance: m.dateNaissance ? new Date(m.dateNaissance) : undefined,
-        })) || [],
-        createdAt: toDate(doc.createdAt) || new Date(),
-        updatedAt: toDate(doc.updatedAt) || new Date(),
-      })) as Family[];
+      const familiesData = snapshot.documents.map((doc) => {
+        let membres = [];
+        try {
+          membres = doc.members ? JSON.parse(doc.members) : [];
+          membres = membres.map((m: any) => ({
+            ...m,
+            dateNaissance: m.dateNaissance ? new Date(m.dateNaissance) : undefined,
+          }));
+        } catch (e) {
+          membres = [];
+        }
+        
+        return {
+          id: doc.$id,
+          membreId: doc.createdBy || "",
+          membreNom: doc.headOfFamily || "",
+          adresse: doc.address || "",
+          telephone: doc.phone || "",
+          membres,
+          createdAt: toDate(doc.createdAt) || new Date(),
+          updatedAt: toDate(doc.createdAt) || new Date(),
+        };
+      }) as Family[];
 
       setFamilies(familiesData);
     } catch (error) {
@@ -116,16 +129,16 @@ export default function CensusPage() {
 
     try {
       const familyData = {
-        membreId: userProfile.id,
-        membreNom: userProfile.displayName,
-        adresse: formData.adresse,
-        telephone: formData.telephone,
-        membres: formData.membres.map((m) => ({
+        familyName: userProfile.displayName + " Family",
+        headOfFamily: userProfile.displayName,
+        address: formData.adresse,
+        phone: formData.telephone,
+        members: JSON.stringify(formData.membres.map((m) => ({
           ...m,
           dateNaissance: m.dateNaissance?.toISOString(),
-        })),
+        }))),
+        createdBy: userProfile.id,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       await addDoc("families", familyData);

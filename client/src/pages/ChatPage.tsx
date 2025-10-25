@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Send, MessageSquare } from "lucide-react";
 import type { Message } from "@shared/schema";
-import { Timestamp, addDoc, limit, onSnapshot, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
+import { Timestamp, addDoc, limit, onSnapshot, query, orderBy, serverTimestamp, toDate } from '@/lib/firebase-compat';
 
 export default function ChatPage() {
   const { userProfile } = useAuth();
