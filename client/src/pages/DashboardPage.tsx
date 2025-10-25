@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, where, orderBy, limit, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper, BarChart3, LineChart } from "lucide-react";

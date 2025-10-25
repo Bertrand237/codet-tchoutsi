@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
