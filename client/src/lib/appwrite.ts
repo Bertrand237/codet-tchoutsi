@@ -31,12 +31,16 @@ export const COLLECTIONS = {
   ADS: 'ads',
 };
 
-// IDs des buckets de stockage
-export const BUCKETS = {
-  PAYMENT_PROOFS: 'payment-proofs',
-  BLOG_IMAGES: 'blog-images',
-  ADS_VIDEOS: 'ads-videos',
-  PROFILE_PICTURES: 'profile-pictures',
+// ID du bucket de stockage unique (limitation plan gratuit : 1 bucket)
+// Nous utilisons des dossiers virtuels pour organiser les fichiers
+export const STORAGE_BUCKET_ID = 'payment-proofs';
+
+// Préfixes pour organiser les fichiers dans le bucket unique
+export const STORAGE_FOLDERS = {
+  PAYMENT_PROOFS: 'payments/',
+  BLOG_IMAGES: 'blog/',
+  ADS_VIDEOS: 'ads/',
+  PROFILE_PICTURES: 'profiles/',
 };
 
 export { client };

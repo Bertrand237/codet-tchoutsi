@@ -215,7 +215,7 @@ async function initializeAppwrite() {
                   attr.key,
                   attr.size!,
                   attr.required,
-                  attr.default,
+                  typeof attr.default === 'string' ? attr.default : undefined,
                   false
                 );
               } else if (attr.type === 'integer') {
@@ -226,7 +226,7 @@ async function initializeAppwrite() {
                   attr.required,
                   undefined,
                   undefined,
-                  attr.default
+                  typeof attr.default === 'number' ? attr.default : undefined
                 );
               } else if (attr.type === 'double') {
                 await databases.createFloatAttribute(
@@ -236,7 +236,7 @@ async function initializeAppwrite() {
                   attr.required,
                   undefined,
                   undefined,
-                  attr.default
+                  typeof attr.default === 'number' ? attr.default : undefined
                 );
               } else if (attr.type === 'boolean') {
                 await databases.createBooleanAttribute(
@@ -244,7 +244,7 @@ async function initializeAppwrite() {
                   collection.id,
                   attr.key,
                   attr.required,
-                  attr.default
+                  typeof attr.default === 'boolean' ? attr.default : undefined
                 );
               } else if (attr.type === 'datetime') {
                 await databases.createDatetimeAttribute(
@@ -252,7 +252,7 @@ async function initializeAppwrite() {
                   collection.id,
                   attr.key,
                   attr.required,
-                  attr.default
+                  typeof attr.default === 'string' ? attr.default : undefined
                 );
               }
               
@@ -293,10 +293,7 @@ async function initializeAppwrite() {
             false,
             undefined,
             undefined,
-            ['jpg', 'jpeg', 'png', 'pdf', 'mp4', 'webm', 'mov', 'webp'],
-            undefined,
-            undefined,
-            bucket.maxFileSize
+            ['jpg', 'jpeg', 'png', 'pdf', 'mp4', 'webm', 'mov', 'webp']
           );
           console.log(`   ✅ Bucket créé`);
         } else {
