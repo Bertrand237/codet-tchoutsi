@@ -48,15 +48,16 @@ export default function RegisterPage() {
     try {
       await signUp(email, password, displayName, role);
       toast({
-        title: "Compte créé avec succès",
-        description: "Vous pouvez maintenant vous connecter",
+        title: "Bienvenue !",
+        description: "Votre compte a été créé avec succès",
       });
-      setLocation("/login");
+      setLocation("/dashboard");
     } catch (error: any) {
+      console.error("Erreur complète:", error);
       toast({
         variant: "destructive",
         title: "Erreur d'inscription",
-        description: error.message || "Une erreur est survenue",
+        description: error.message || "Une erreur est survenue lors de la création du compte",
       });
     } finally {
       setLoading(false);

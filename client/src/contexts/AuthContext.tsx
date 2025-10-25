@@ -32,27 +32,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre") {
-    // Créer le compte utilisateur
-    const user = await account.create(ID.unique(), email, password, displayName);
-    
-    // Se connecter automatiquement
-    await account.createEmailPasswordSession(email, password);
-    
-    // Vérifier si c'est le premier utilisateur
-    const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
-    const isFirstUser = usersListResponse.total === 0;
-    
-    // Le premier utilisateur devient automatiquement admin
-    const finalRole = isFirstUser ? "admin" : role;
-    
-    const userProfile = {
-      email,
-      displayName,
-      role: finalRole,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      // Créer le compte utilisateur
+      const user = await account.create(ID.unique(), email, password, displayName);
+      
+      // Vérifier si c'est le premier utilisateur
+      const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
+      const isFirstUser = usersListResponse.total === 0;
+      
+      // Le premier utilisateur devient automatiquement admin
+      const finalRole = isFirstUser ? "admin" : role;
+      
+      const userProfile = {
+        email,
+        displayName,
+        role: finalRole,
+        createdAt: new Date().toISOString(),
+      };
 
-    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
+      // Créer le profil utilisateur dans la base de données
+      await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
+      
+      // Se connecter automatiquement
+      await account.createEmailPasswordSession(email, password);
+      
+      // Recharger les informations utilisateur
+      const currentUser = await account.get();
+      setCurrentUser(currentUser);
+      
+      const userDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, currentUser.$id);
+      setUserProfile({
+        id: currentUser.$id,
+        email: userDoc.email,
+        displayName: userDoc.displayName,
+        role: userDoc.role,
+        photoURL: userDoc.photoURL,
+        phoneNumber: userDoc.phoneNumber,
+        createdAt: new Date(userDoc.createdAt),
+      });
+    } catch (error: any) {
+      console.error("Erreur d'inscription:", error);
+      throw new Error(error.message || "Erreur lors de l'inscription");
+    }
   }
 
   async function signOut() {
