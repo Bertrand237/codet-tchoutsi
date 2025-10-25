@@ -6,9 +6,10 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { User, UserRole } from "@shared/schema";
+import { convertToDate } from "@/lib/utils";
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -41,17 +42,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre") {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
     
-    const userProfile: Omit<User, "id"> = {
+    // Vérifier si c'est le premier utilisateur
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const isFirstUser = usersSnapshot.empty;
+    
+    // Le premier utilisateur devient automatiquement admin
+    const finalRole = isFirstUser ? "admin" : role;
+    
+    const userProfile = {
       email,
       displayName,
-      role,
-      createdAt: new Date(),
+      role: finalRole,
+      createdAt: serverTimestamp(),
     };
 
-    await setDoc(doc(db, "users", user.uid), {
-      ...userProfile,
-      createdAt: userProfile.createdAt.toISOString(),
-    });
+    await setDoc(doc(db, "users", user.uid), userProfile);
   }
 
   async function signOut() {
@@ -73,8 +78,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: data.role,
             photoURL: data.photoURL,
             phoneNumber: data.phoneNumber,
-            createdAt: new Date(data.createdAt),
+            createdAt: convertToDate(data.createdAt),
           });
+        } else {
+          // Si le profil n'existe pas, le créer automatiquement
+          console.log("Profil utilisateur non trouvé, création automatique...");
+          
+          // Vérifier si c'est le premier utilisateur
+          const usersSnapshot = await getDocs(collection(db, "users"));
+          const isFirstUser = usersSnapshot.empty;
+          
+          const newProfile = {
+            email: user.email || "",
+            displayName: user.displayName || user.email?.split("@")[0] || "Utilisateur",
+            role: isFirstUser ? "admin" : "membre",
+            createdAt: serverTimestamp(),
+          };
+          
+          await setDoc(doc(db, "users", user.uid), newProfile);
+          
+          // Recharger le profil
+          const updatedDoc = await getDoc(doc(db, "users", user.uid));
+          if (updatedDoc.exists()) {
+            const data = updatedDoc.data();
+            setUserProfile({
+              id: user.uid,
+              email: data.email,
+              displayName: data.displayName,
+              role: data.role,
+              photoURL: data.photoURL,
+              phoneNumber: data.phoneNumber,
+              createdAt: convertToDate(data.createdAt),
+            });
+          }
         }
       } else {
         setUserProfile(null);
