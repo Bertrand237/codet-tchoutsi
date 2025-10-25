@@ -1,127 +1,249 @@
-# CODET - Comité de Développement Tchoutsi
+# 🏛️ CODET - Comité de Développement Tchoutsi
 
-![CODET Logo](https://img.shields.io/badge/CODET-Community%20Management-0A7D33?style=for-the-badge)
+![CODET](https://img.shields.io/badge/CODET-Community%20Management-0A7D33?style=for-the-badge)
+![Appwrite](https://img.shields.io/badge/Appwrite-Cloud-F02E65?style=for-the-badge&logo=appwrite)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript)
 
-Une application web complète de gestion du Comité de Développement Tchoutsi, entièrement basée sur Firebase.
+Application web complète de gestion pour le Comité de Développement Tchoutsi. Une solution moderne et intuitive pour gérer l'administration, les finances, les projets et la communication du comité.
 
-## 🌟 Fonctionnalités
+## ✨ Fonctionnalités
 
-### 👥 Gestion des Utilisateurs
-- **Authentification sécurisée** avec Firebase Auth (email/mot de passe)
+### 🔐 Authentification & Rôles
 - **6 niveaux de rôles** : Admin, Président, Trésorier, Commissaire, Membre, Visiteur
-- Permissions granulaires par rôle
+- Système de permissions granulaire
+- Premier utilisateur = Admin automatique
+- Gestion de profils avec photo
 
-### 💰 Gestion des Paiements
-- Enregistrement des cotisations avec preuves (images/PDF)
-- Système de validation à 3 états : En attente, Validé, Rejeté
-- Upload sécurisé sur Firebase Storage
-- Traçabilité complète (qui a validé, quand, commentaires)
+### 📊 Tableau de Bord
+- Statistiques en temps réel
+- Graphiques interactifs (Recharts : pie, line, bar)
+- Vue d'ensemble complète des activités
+- Métriques de performance
+
+### 💰 Gestion Financière
+- **Paiements** : Enregistrement, validation, preuves (upload), exports PDF/CSV
+- **Budget** : Suivi des revenus/dépenses, calcul automatique du solde
+- Statistiques financières détaillées
+- Traçabilité complète
+
+### 👥 Gestion des Membres
+- Administration complète des utilisateurs
+- Modification des rôles
+- Vues détaillées des profils
+- Export CSV des membres
+
+### 📁 Gestion de Projets
+- Création et suivi de projets
+- Gestion du statut, budget, progression
+- Attribution de responsables
+- Priorités et échéances
+- Exports PDF/CSV
+
+### 📅 Calendrier d'Événements
+- Vues multiples : Mois, Semaine, Jour, Agenda
+- Bibliothèque react-big-calendar
+- Localisation française complète
+- Export CSV des événements
+
+### 🗳️ Système de Vote
+- Création de sondages (Admin/Président)
+- Options multiples
+- Résultats en temps réel
+- Vote sécurisé et anonyme
 
 ### 👨‍👩‍👧‍👦 Recensement Familial
-- Enregistrement des informations familiales
-- Gestion des membres de famille
+- Gestion complète des familles
+- Informations détaillées des membres
+- Suivi démographique
 - Historique complet
 
-### 💬 Messagerie en Temps Réel
-- Chat de groupe style WhatsApp
-- Messages instantanés avec Firestore
-- Synchronisation automatique
-- Avatars et horodatage
+### 💬 Chat en Temps Réel
+- Messagerie de groupe instantanée
+- Abonnements Appwrite Real-time
+- Communication fluide entre membres
+- Interface moderne type WhatsApp
 
-### 📰 Blog Public
-- Articles et annonces du comité
-- Gestion brouillon/publié
-- Images pour chaque article
+### 📝 Blog Public
+- Gestion d'articles (brouillon/publié)
+- Upload d'images
+- Extraits et dates de publication
 - Visible par tous, géré par admin/président
 
-### 📹 Publicités Vidéo
-- Upload et gestion de vidéos publicitaires
-- Contrôle de l'ordre d'affichage
-- Activation/désactivation
+### 📺 Publicités Vidéo
+- Upload de vidéos promotionnelles
+- **Barre de progression en temps réel** lors de l'upload
+- Gestion des annonces (activer/désactiver)
+- Contrôle de l'affichage
 
-## 🎨 Design
+### 👤 Profils Utilisateurs
+- Visualisation complète du profil
+- Modification du nom d'affichage
+- **Upload de photo de profil avec progression**
+- Descriptions des privilèges par rôle
+- Historique d'activité
 
-- **Couleur primaire** : Vert #0A7D33
-- **UI moderne** avec Shadcn UI et Tailwind CSS
-- **Navigation** par sidebar collapsible
-- **Mode sombre** complet
-- **Responsive** sur tous les appareils
-
-## 🏗️ Architecture Technique
+## 🛠️ Stack Technique
 
 ### Frontend
 - **React 18** avec TypeScript
-- **Wouter** pour le routing
-- **TanStack Query** pour la gestion du cache
-- **Shadcn UI** + Tailwind CSS
-- **Vite** pour le build
+- **Wouter** - Routing léger et performant
+- **Shadcn UI** + **Tailwind CSS** - Interface utilisateur moderne
+- **TanStack Query v5** - Gestion d'état et cache
+- **Recharts** - Visualisation de données
+- **react-big-calendar** - Calendrier événementiel
+- **Framer Motion** - Animations fluides
+- **jsPDF** - Génération de rapports PDF
 
-### Backend
-- **Firebase Authentication** : Gestion des utilisateurs
-- **Firebase Firestore** : Base de données NoSQL temps réel
-- **Firebase Storage** : Stockage des fichiers (images, vidéos, PDF)
+### Backend (100% Gratuit)
+- **Appwrite Cloud** (https://fra.cloud.appwrite.io/v1)
+  - Authentication (email/password)
+  - Database (11 collections)
+  - Storage (bucket unique avec dossiers virtuels)
+  - Real-time subscriptions
+  - Aucun coût, 75k utilisateurs/mois, 2GB storage, 10GB bandwidth
 
-### Collections Firestore
-1. `users` - Profils utilisateurs avec rôles
-2. `payments` - Paiements et validations
-3. `families` - Recensement familial
-4. `messages` - Messages du chat
-5. `blog` - Articles et annonces
-6. `advertisements` - Publicités vidéo
+### Design
+- Thème vert personnalisé (#0A7D33)
+- Mode sombre complet
+- Interface responsive
+- Accessibilité (data-testid sur tous les éléments)
+- Animations et transitions élégantes
 
 ## 🚀 Démarrage Rapide
 
-### 1. Prérequis
-- Node.js 18+ installé
-- Compte Firebase créé
-- Projet Firebase configuré
+### Prérequis
+- Node.js 20+
+- Compte Appwrite Cloud (gratuit - https://cloud.appwrite.io)
 
-### 2. Configuration Firebase
-
-Créez les variables d'environnement suivantes :
-```env
-VITE_FIREBASE_API_KEY=votre_api_key
-VITE_FIREBASE_PROJECT_ID=votre_project_id
-VITE_FIREBASE_APP_ID=votre_app_id
-```
-
-### 3. Installation
+### Installation
 
 ```bash
-# Les dépendances sont déjà installées
+# Cloner le dépôt
+git clone https://github.com/votre-nom/codet-tchoutsi.git
+cd codet-tchoutsi
+
+# Installer les dépendances
+npm install
+
+# Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env avec vos clés Appwrite
+
+# Lancer en développement
 npm run dev
 ```
 
 L'application sera accessible sur `http://localhost:5000`
 
-### 4. Configuration Firebase Console
+### Variables d'Environnement
 
-Suivez le guide détaillé dans `FIREBASE_SETUP.md` pour :
-- Activer Authentication (Email/Password)
-- Créer la base Firestore
-- Configurer Storage
-- Déployer les règles de sécurité
+```env
+VITE_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
+VITE_APPWRITE_PROJECT_ID=votre-project-id
+VITE_APPWRITE_DATABASE_ID=codet-db
+```
 
-### 5. Créer le Premier Admin
+## 📦 Déploiement (100% Gratuit)
 
-1. Inscrivez-vous via l'interface
-2. Dans Firebase Console → Authentication, notez votre UID
-3. Dans Firestore → Collection `users` → Votre document
-4. Modifiez `role` de `"membre"` à `"admin"`
+L'application peut être déployée **sans aucun frais** sur :
+
+### Option 1 : Netlify (Recommandé)
+
+```bash
+# Build de production
+npm run build
+
+# Déploiement automatique via GitHub
+# Voir GITHUB-SETUP.md pour le guide complet
+```
+
+### Autres Options Gratuites
+- **Vercel** - Performances excellentes
+- **Cloudflare Pages** - Bande passante illimitée
+- **Render** - Simple et efficace
+
+### Guides Détaillés
+- 📖 [Guide Complet de Déploiement](./DEPLOIEMENT.md)
+- 🚀 [Setup GitHub + Netlify Pas à Pas](./GITHUB-SETUP.md)
+
+## 📂 Structure du Projet
+
+```
+codet-tchoutsi/
+├── client/
+│   ├── src/
+│   │   ├── components/     # Composants UI réutilisables
+│   │   │   ├── ui/         # Shadcn UI components
+│   │   │   └── app-sidebar.tsx
+│   │   ├── contexts/       # Contextes React (Auth)
+│   │   ├── hooks/          # Hooks personnalisés
+│   │   ├── lib/            # Utilitaires
+│   │   │   ├── appwrite.ts           # Config Appwrite
+│   │   │   ├── firebase-compat.ts    # Wrapper Appwrite
+│   │   │   └── queryClient.ts
+│   │   ├── pages/          # Pages de l'application (11 pages)
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── PaymentsPage.tsx
+│   │   │   ├── MembersPage.tsx
+│   │   │   ├── BudgetPage.tsx
+│   │   │   ├── ProjectsPage.tsx
+│   │   │   ├── VotesPage.tsx
+│   │   │   ├── CalendarPage.tsx
+│   │   │   ├── ChatPage.tsx
+│   │   │   ├── BlogPage.tsx
+│   │   │   ├── AdsPage.tsx
+│   │   │   ├── CensusPage.tsx
+│   │   │   └── ProfilePage.tsx
+│   │   └── App.tsx         # Point d'entrée + routing
+├── shared/
+│   └── schema.ts           # Schémas TypeScript
+├── scripts/
+│   └── init-appwrite.ts    # Script d'initialisation
+├── server/                 # Express minimal (sert le frontend)
+├── DEPLOIEMENT.md          # Guide déploiement détaillé
+├── GITHUB-SETUP.md         # Guide GitHub + Netlify
+├── netlify.toml            # Config Netlify
+├── vercel.json             # Config Vercel
+└── .env.example            # Modèle variables d'env
+```
+
+## 🗄️ Base de Données Appwrite
+
+### Collections (11)
+
+| Collection | Description | Attributs Clés |
+|------------|-------------|----------------|
+| **users** | Profils utilisateurs | role, displayName, photoURL |
+| **projects** | Gestion de projets | status, priority, budget, progress |
+| **payments** | Paiements et validations | userId, userName, amount, status |
+| **budget** | Suivi budgétaire | type (revenue/expense), amount |
+| **events** | Événements calendrier | title, startDate, endDate, type |
+| **polls** | Sondages/votes | question, options, createdBy |
+| **votes** | Votes individuels | pollId, userId, optionIndex |
+| **families** | Recensement familial | familyName, members (JSON) |
+| **messages** | Messages chat | userId, userName, text |
+| **blog-posts** | Articles blog | title, content, isPublished |
+| **ads** | Publicités vidéo | title, videoUrl, isActive |
+
+### Storage Appwrite
+
+- **Bucket unique** : `payment-proofs`
+- **Dossiers virtuels** :
+  - `payments/` - Preuves de paiement (PDF, images)
+  - `blog/` - Images d'articles
+  - `ads/` - Vidéos publicitaires
+  - `profiles/` - Photos de profil
 
 ## 🔒 Sécurité
 
-### Règles Firestore
-- Les utilisateurs ne peuvent lire que leurs propres données ou celles autorisées par leur rôle
-- Seuls les commissaires peuvent valider les paiements
-- Seuls admin et président peuvent gérer le blog et les publicités
-- La messagerie est accessible uniquement aux membres actifs
-
-### Règles Storage
-- Taille maximale images : 10 MB
-- Taille maximale vidéos : 50 MB
-- Suppressions désactivées côté client (via Console Firebase uniquement)
-- Types de fichiers validés selon le dossier
+- ✅ Règles de permissions Appwrite complètes
+- ✅ Contrôle d'accès basé sur les rôles (RBAC)
+- ✅ Validation côté serveur (Appwrite)
+- ✅ Authentification sécurisée
+- ✅ Stockage sécurisé des fichiers
+- ✅ Protection CSRF
+- ✅ HTTPS obligatoire en production
 
 ## 📊 Permissions par Rôle
 
@@ -129,105 +251,123 @@ Suivez le guide détaillé dans `FIREBASE_SETUP.md` pour :
 |----------------|:-----:|:---------:|:---------:|:-----------:|:------:|:--------:|
 | Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Gestion membres | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Voir paiements | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Créer paiement | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Valider paiement | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Budget | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Projets | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Calendrier | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Créer sondage | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Voter | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Recensement | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Messagerie | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Lire blog | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Gérer blog | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Publicités | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Statistiques | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 
-## 📁 Structure du Projet
+## 🌍 Coût d'Hébergement
 
-```
-codet/
-├── client/
-│   ├── src/
-│   │   ├── components/     # Composants réutilisables
-│   │   ├── contexts/       # Context API (Auth)
-│   │   ├── lib/            # Firebase config, utils
-│   │   ├── pages/          # Pages de l'application
-│   │   └── App.tsx         # Router principal
-│   └── index.html
-├── shared/
-│   └── schema.ts           # Types TypeScript partagés
-├── server/                 # Express (minimal, sert le frontend)
-├── firestore.rules         # Règles de sécurité Firestore
-├── storage.rules           # Règles de sécurité Storage
-└── firebase.json           # Configuration Firebase
-```
+| Service | Plan | Coût Mensuel |
+|---------|------|-------------|
+| **Frontend** (Netlify/Vercel) | Free Tier | **0€** ✅ |
+| **Backend** (Appwrite Cloud) | Free Tier | **0€** ✅ |
+| **Domaine** (optionnel) | - | ~10€/an |
+| **TOTAL** | - | **0€/mois** 🎉 |
 
-## 🔧 Scripts Disponibles
+**Aucun frais d'hébergement ! Application 100% gratuite.**
+
+## 🔧 Scripts npm
 
 ```bash
-npm run dev          # Démarre le serveur de développement
-npm run build        # Build pour production
-npm run preview      # Preview du build
+npm run dev              # Serveur de développement (localhost:5000)
+npm run build            # Build de production (dist/)
+npm run start            # Serveur de production
+npm run check            # Vérification TypeScript
 ```
 
 ## 📱 Pages de l'Application
 
-- `/login` - Connexion
-- `/register` - Inscription
-- `/dashboard` - Tableau de bord
-- `/payments` - Gestion des paiements
-- `/census` - Recensement familial
-- `/chat` - Messagerie en temps réel
-- `/blog` - Blog public
-- `/ads` - Publicités (admin/président uniquement)
+| Route | Description | Accès |
+|-------|-------------|-------|
+| `/login` | Connexion | Public |
+| `/register` | Inscription | Public |
+| `/` | Tableau de bord | Authentifié |
+| `/payments` | Gestion paiements | Membre+ |
+| `/members` | Gestion membres | Commissaire+ |
+| `/budget` | Suivi budget | Trésorier+ |
+| `/projects` | Projets | Membre+ |
+| `/calendar` | Calendrier | Membre+ |
+| `/votes` | Sondages | Membre+ |
+| `/census` | Recensement | Membre+ |
+| `/chat` | Messagerie | Membre+ |
+| `/blog` | Blog | Visiteur+ |
+| `/ads` | Publicités | Admin/Président |
+| `/profile` | Profil utilisateur | Authentifié |
 
-## 🌐 Déploiement
+## 📖 Documentation
 
-### Option 1 : Firebase Hosting (Recommandé)
+- [📘 Guide de Déploiement Complet](./DEPLOIEMENT.md)
+- [🚀 Setup GitHub + Netlify](./GITHUB-SETUP.md)
+- [📄 Architecture Technique](./replit.md)
+- [🔗 Documentation Appwrite](https://appwrite.io/docs)
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-npm run build
-firebase deploy
-```
+## 🎯 Prochaines Étapes
 
-### Option 2 : Replit Deployment
+1. **Pousser le code sur GitHub** - Voir [GITHUB-SETUP.md](./GITHUB-SETUP.md)
+2. **Déployer sur Netlify** - 100% gratuit, 5 minutes
+3. **Configurer le domaine** - Optionnel
+4. **Inviter les membres** - Commencer à utiliser !
 
-L'application est prête pour le déploiement sur Replit avec la fonctionnalité de publication intégrée.
+## 🤝 Contribution
 
-## 📝 Notes Techniques
+Les contributions sont les bienvenues ! Pour contribuer :
 
-### Timestamps Firestore
-L'application utilise `serverTimestamp()` pour garantir :
-- Timestamps cohérents côté serveur
-- Pas de problèmes de synchronisation
-- Gestion correcte des fuseaux horaires
-
-### Politique de Suppression
-Les règles Storage désactivent la suppression côté client pour :
-- **Preuves de paiement** : Intégrité financière
-- **Images blog** : Conservation historique
-- **Publicités** : Traçabilité
-
-Les suppressions doivent être effectuées via Firebase Console.
+1. Fork le projet
+2. Créer une branche (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit les changements (`git commit -m 'Ajout nouvelle fonctionnalité'`)
+4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Ouvrir une Pull Request
 
 ## 🆘 Support
 
-Pour toute question :
-1. Consultez `FIREBASE_SETUP.md` pour la configuration
-2. Consultez `replit.md` pour la documentation technique
-3. Vérifiez les règles Firestore/Storage dans les fichiers `.rules`
+Pour toute question ou problème :
+
+1. Consultez la [documentation de déploiement](./DEPLOIEMENT.md)
+2. Vérifiez le [guide GitHub](./GITHUB-SETUP.md)
+3. Lisez la [documentation Appwrite](https://appwrite.io/docs)
+4. Consultez [replit.md](./replit.md) pour l'architecture
 
 ## 📄 Licence
 
-© 2024 CODET - Comité de Développement Tchoutsi. Tous droits réservés.
+MIT License - Libre d'utilisation et de modification
+
+## 👨‍💻 Développé avec
+
+- ❤️ Par et pour le Comité de Développement Tchoutsi
+- ⚡ Powered by [Appwrite Cloud](https://appwrite.io)
+- 🎨 Design System: [Shadcn UI](https://ui.shadcn.com)
+- 🚀 Hébergement: [Netlify](https://netlify.com) (gratuit)
+- 🛠️ Build: [Vite](https://vitejs.dev)
 
 ## 🙏 Crédits
 
-- **Framework** : React + TypeScript
-- **UI** : Shadcn UI + Tailwind CSS
-- **Backend** : Firebase (Auth, Firestore, Storage)
+- **Framework** : React 18 + TypeScript
+- **UI Components** : Shadcn UI + Radix UI
+- **Styling** : Tailwind CSS
+- **Backend** : Appwrite Cloud
 - **Icons** : Lucide React
-- **Build** : Vite
+- **Charts** : Recharts
+- **Calendar** : react-big-calendar
+- **PDF Generation** : jsPDF
 
 ---
 
-**Développé avec ❤️ pour le Comité de Développement Tchoutsi**
+<div align="center">
+
+**CODET** - Moderniser la gestion communautaire avec la technologie 🚀
+
+*Entièrement gratuit et open-source*
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
+
+</div>
