@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,13 +108,13 @@ export default function LoginPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Pas encore de compte ?{" "}
-                <a
+                <Link
                   href="/register"
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-primary hover:underline cursor-pointer"
                   data-testid="link-register"
                 >
                   S'inscrire
-                </a>
+                </Link>
               </p>
             </div>
           </CardContent>
