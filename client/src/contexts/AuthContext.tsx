@@ -1,18 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-  User as FirebaseUser,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-} from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { account, databases, DATABASE_ID, COLLECTIONS } from "@/lib/appwrite";
+import { ID, Models, Query } from "appwrite";
 import type { User, UserRole } from "@shared/schema";
-import { convertToDate } from "@/lib/utils";
 
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: Models.User<Models.Preferences> | null;
   userProfile: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -31,20 +23,24 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<Models.User<Models.Preferences> | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function signIn(email: string, password: string) {
-    await signInWithEmailAndPassword(auth, email, password);
+    await account.createEmailPasswordSession(email, password);
   }
 
   async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre") {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
+    // Créer le compte utilisateur
+    const user = await account.create(ID.unique(), email, password, displayName);
+    
+    // Se connecter automatiquement
+    await account.createEmailPasswordSession(email, password);
     
     // Vérifier si c'est le premier utilisateur
-    const usersSnapshot = await getDocs(collection(db, "users"));
-    const isFirstUser = usersSnapshot.empty;
+    const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
+    const isFirstUser = usersListResponse.total === 0;
     
     // Le premier utilisateur devient automatiquement admin
     const finalRole = isFirstUser ? "admin" : role;
@@ -53,51 +49,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       displayName,
       role: finalRole,
-      createdAt: serverTimestamp(),
+      createdAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, "users", user.uid), userProfile);
+    await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
   }
 
   async function signOut() {
-    await firebaseSignOut(auth);
+    await account.deleteSession('current');
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      
-      if (user) {
+    // Vérifier si l'utilisateur est connecté
+    const checkAuth = async () => {
+      try {
+        const user = await account.get();
+        setCurrentUser(user);
+        
+        // Récupérer le profil utilisateur
         try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUserProfile({
-              id: user.uid,
-              email: data.email,
-              displayName: data.displayName,
-              role: data.role,
-              photoURL: data.photoURL,
-              phoneNumber: data.phoneNumber,
-              createdAt: convertToDate(data.createdAt),
-            });
-          } else {
-            // Profil n'existe pas - rediriger vers login pour recréer le compte
-            console.log("Profil utilisateur non trouvé dans Firestore");
-            setUserProfile(null);
-          }
+          const userDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id);
+          setUserProfile({
+            id: user.$id,
+            email: userDoc.email,
+            displayName: userDoc.displayName,
+            role: userDoc.role,
+            photoURL: userDoc.photoURL,
+            phoneNumber: userDoc.phoneNumber,
+            createdAt: new Date(userDoc.createdAt),
+          });
         } catch (error) {
           console.error("Erreur lors du chargement du profil:", error);
           setUserProfile(null);
         }
-      } else {
+      } catch (error) {
+        // Utilisateur non connecté
+        setCurrentUser(null);
         setUserProfile(null);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
 
-    return unsubscribe;
+    checkAuth();
   }, []);
 
   const value = {
