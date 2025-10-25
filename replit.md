@@ -17,15 +17,22 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 - Protection des routes par rôle
 
 ### 2. Tableau de bord
-- Statistiques en temps réel
+- Statistiques en temps réel (6 cartes de statistiques)
 - Accès rapides aux fonctionnalités principales
 - Vue d'ensemble des activités du comité
+- **Graphiques Recharts interactifs** :
+  - Pie chart : Projets par statut avec légende
+  - Line chart : Évolution des paiements sur 6 mois
+  - Bar chart : Comparaison revenus vs dépenses mensuels
+- Activité récente et statistiques globales
 
 ### 3. Gestion des Paiements (Firestore + Storage)
 - Enregistrement des cotisations
 - Upload de preuves de paiement (images/PDF) sur Firebase Storage
 - Validation par les commissaires
 - Statuts : en_attente, validé, rejeté
+- **Export PDF** avec en-têtes CODET et logo
+- **Export CSV** de tous les paiements
 
 ### 4. Recensement Familial (Firestore)
 - Enregistrement des informations familiales
@@ -54,6 +61,8 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 - Suivi du budget et de la progression
 - Attribution de responsables et membres
 - Filtres et recherche avancée
+- **Export PDF** professionnel avec statistiques
+- **Export CSV** de tous les projets
 
 ### 9. Gestion des Membres (Firestore)
 - Administration complète des utilisateurs
@@ -61,6 +70,7 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 - Recherche et filtres par rôle
 - Statistiques des membres
 - Vue détaillée avec historique
+- **Export CSV** des membres avec toutes les informations
 
 ### 10. Gestion Budgétaire (Firestore)
 - Enregistrement des transactions (revenus/dépenses)
@@ -69,11 +79,18 @@ Application web complète de gestion du Comité de Développement Tchoutsi (CODE
 - Statistiques financières en temps réel
 - Filtres par type et catégorie
 - Accessible par admin/président/trésorier
+- **Export PDF** avec totaux et statistiques
+- **Export CSV** de toutes les transactions
 
-### 11. Calendrier des Événements (Firestore)
+### 11. Calendrier des Événements (Firestore + react-big-calendar)
 - Création d'événements et réunions
 - Types : réunion, événement, formation, cérémonie
-- Vue liste des événements (à venir / tous)
+- **Vues multiples** : Mois, Semaine, Jour, Agenda
+- **Localisation française** complète (moment.js)
+- **Événements cliquables** avec détails en dialog
+- **Thème personnalisé** vert CODET
+- Navigation intuitive entre périodes
+- Export CSV des événements
 - Gestion des dates et lieux
 - Statistiques des événements
 
@@ -308,7 +325,7 @@ L'application est prête pour le déploiement sur Firebase Hosting ou Replit.
 - ✅ Gestion des projets avec CRUD complet
 - ✅ Gestion des membres et rôles
 - ✅ Gestion budgétaire (revenus/dépenses)
-- ✅ Calendrier des événements
+- ✅ Calendrier des événements avec vues avancées (react-big-calendar)
 - ✅ Système de votes et sondages
 - ✅ Gestion des paiements avec validation
 - ✅ Recensement familial
@@ -316,6 +333,9 @@ L'application est prête pour le déploiement sur Firebase Hosting ou Replit.
 - ✅ Blog public administrable
 - ✅ Gestion des publicités vidéo
 - ✅ Dashboard avec statistiques réelles en temps réel
+- ✅ **Graphiques Recharts interactifs** (pie, line, bar charts)
+- ✅ **Exports PDF** (Paiements, Budget, Projets) avec branding CODET
+- ✅ **Exports CSV** complets (Membres, Paiements, Projets, Budget, Événements)
 - ✅ Système de permissions par rôle
 - ✅ Mode sombre
 - ✅ Design responsive
@@ -358,23 +378,29 @@ Les suppressions doivent être effectuées via la Console Firebase par les admin
 - Plus sécurisé et permet une logique de validation complexe
 
 ### Calendrier
-**Limitation**: Le calendrier actuel offre une vue liste fonctionnelle mais manque :
-- Vues mensuelles/hebdomadaires avec grille visuelle
-- Système de rappels/notifications
+**✅ Résolu**: Le calendrier dispose maintenant de vues avancées grâce à `react-big-calendar` :
+- Vues Mois, Semaine, Jour, Agenda avec grille visuelle
+- Localisation française complète
+- Événements cliquables avec détails
+- Export CSV
 
-**Solution Recommandée**:
-- Installer `react-big-calendar` ou bibliothèque similaire pour vues avancées
+**Amélioration Future**:
 - Implémenter Firebase Cloud Messaging pour notifications de rappels
+- Système de rappels automatiques par email
 
 ## Prochaines Étapes Recommandées
 1. ✅ Règles de sécurité Firestore et Storage configurées
-2. Déployer les règles sur Firebase Console
-3. Créer le premier utilisateur admin via Firebase Console
-4. **[Priorité Haute]** Ajouter Firebase Cloud Functions pour :
+2. ✅ Calendrier avec vues avancées (`react-big-calendar`)
+3. ✅ Exports PDF professionnels (`jspdf` + `jspdf-autotable`)
+4. ✅ Graphiques dashboard interactifs (`recharts`)
+5. ✅ Exports CSV complets pour toutes les données
+6. **[Priorité Haute]** Déployer sur Firebase :
+   - Configurer Firebase credentials valides
+   - Déployer les règles de sécurité sur Firebase Console
+   - Créer le premier utilisateur admin via Firebase Console
+7. **[Priorité Haute]** Ajouter Firebase Cloud Functions pour :
    - Sécuriser le système de vote (votes atomiques)
    - Notifications email pour événements importants
    - Rappels automatiques pour calendrier
-5. **[Optionnel]** Installer `react-big-calendar` pour vues calendrier avancées
-6. **[Optionnel]** Implémenter export PDF avec `jspdf` pour rapports
-7. **[Optionnel]** Firebase Cloud Messaging pour notifications push
-8. **[Optionnel]** Graphiques avancés avec recharts pour statistiques
+8. **[Optionnel]** Firebase Cloud Messaging pour notifications push
+9. **[Optionnel]** Monitoring et analytics Firebase
