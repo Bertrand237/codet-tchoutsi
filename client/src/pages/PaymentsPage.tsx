@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download } from "lucide-react";
+import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download, FileDown } from "lucide-react";
 import type { Payment, PaymentMode, InsertPayment } from "@shared/schema";
+import { exportPaymentsPDF, exportToCSV } from "@/lib/pdfUtils";
 
 export default function PaymentsPage() {
   const { userProfile } = useAuth();
@@ -177,19 +178,44 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Paiements</h1>
           <p className="text-muted-foreground">Gestion des cotisations et contributions</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-payment">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau Paiement
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => exportPaymentsPDF(payments)}
+            disabled={payments.length === 0}
+            data-testid="button-export-pdf"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportToCSV(payments, "CODET_Paiements", {
+              membreNom: "Membre",
+              montant: "Montant",
+              date: "Date",
+              mode: "Mode",
+              statut: "Statut"
+            })}
+            disabled={payments.length === 0}
+            data-testid="button-export-csv"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-payment">
+                <Plus className="h-4 w-4 mr-2" />
+                Nouveau Paiement
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Enregistrer un paiement</DialogTitle>
               <DialogDescription>
@@ -267,6 +293,7 @@ export default function PaymentsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4">

@@ -13,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, FolderKanban, Calendar, DollarSign, Users as UsersIcon, TrendingUp, Clock } from "lucide-react";
+import { Plus, FolderKanban, Calendar, DollarSign, Users as UsersIcon, TrendingUp, Clock, FileDown, FileText } from "lucide-react";
 import type { Project, ProjectStatus, ProjectPriority } from "@shared/schema";
+import { exportProjectsPDF, exportToCSV } from "@/lib/pdfUtils";
 
 export default function ProjectsPage() {
   const { userProfile } = useAuth();
@@ -209,17 +210,46 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestion des Projets</h1>
           <p className="text-muted-foreground">Suivi et gestion des projets du comité</p>
         </div>
-        {canManageProjects && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-project">
-                <Plus className="h-4 w-4 mr-2" />
-                Nouveau Projet
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => exportProjectsPDF(filteredProjects)}
+            disabled={filteredProjects.length === 0}
+            data-testid="button-export-pdf"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportToCSV(filteredProjects, "CODET_Projets", {
+              titre: "Titre",
+              statut: "Statut",
+              priorite: "Priorité",
+              budget: "Budget",
+              budgetUtilise: "Budget Utilisé",
+              progression: "Progression",
+              responsableNom: "Responsable",
+              dateDebut: "Date début",
+              dateEcheance: "Date échéance"
+            })}
+            disabled={filteredProjects.length === 0}
+            data-testid="button-export-csv"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          {canManageProjects && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-project">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouveau Projet
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -352,6 +382,7 @@ export default function ProjectsPage() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
 
       {/* Statistics Cards */}

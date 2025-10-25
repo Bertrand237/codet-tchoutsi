@@ -12,8 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, TrendingDown, Plus, DollarSign, Calendar, Filter } from "lucide-react";
+import { TrendingUp, TrendingDown, Plus, DollarSign, Calendar, Filter, FileDown, FileText } from "lucide-react";
 import type { BudgetTransaction, TransactionType, TransactionCategory } from "@shared/schema";
+import { exportBudgetPDF, exportToCSV } from "@/lib/pdfUtils";
 
 export default function BudgetPage() {
   const { userProfile } = useAuth();
@@ -159,12 +160,38 @@ export default function BudgetPage() {
           <h1 className="text-3xl font-bold text-foreground">Gestion Budgétaire</h1>
           <p className="text-muted-foreground">Suivi des revenus et dépenses du comité</p>
         </div>
-        {canManageBudget && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-transaction">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvelle Transaction
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => exportBudgetPDF(filteredTransactions)}
+            disabled={filteredTransactions.length === 0}
+            data-testid="button-export-pdf"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportToCSV(filteredTransactions, "CODET_Budget", {
+              type: "Type",
+              montant: "Montant",
+              categorie: "Catégorie",
+              description: "Description",
+              date: "Date",
+              creeParNom: "Créé par"
+            })}
+            disabled={filteredTransactions.length === 0}
+            data-testid="button-export-csv"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          {canManageBudget && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-transaction">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nouvelle Transaction
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -269,7 +296,8 @@ export default function BudgetPage() {
               </form>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Statistics Cards */}
