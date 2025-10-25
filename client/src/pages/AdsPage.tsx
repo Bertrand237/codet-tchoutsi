@@ -30,12 +30,15 @@ export default function AdsPage() {
   async function fetchAds() {
     try {
       const adsRef = "ads";
-      const q = query(adsRef, orderBy("order", "asc"));
+      const q = query(adsRef, orderBy("createdAt", "desc"));
 
       const snapshot = await getDocs(q);
       const adsData = snapshot.documents.map((doc) => ({
         id: doc.$id,
-        ...doc,
+        title: doc.title,
+        videoURL: doc.videoUrl || doc.videoURL,
+        active: doc.isActive !== undefined ? doc.isActive : doc.active,
+        order: doc.order || 0,
         createdAt: toDate(doc.createdAt) || new Date(),
       })) as Advertisement[];
 
@@ -73,9 +76,10 @@ export default function AdsPage() {
 
       const adData = {
         title: formData.title,
-        videoURL,
-        active: formData.active,
-        order: formData.order,
+        description: "",
+        videoUrl: videoURL,
+        isActive: formData.active,
+        createdBy: "admin", // TODO: use current user ID
         createdAt: new Date().toISOString(),
       };
 
@@ -104,8 +108,8 @@ export default function AdsPage() {
 
   async function toggleAdStatus(adId: string, currentStatus: boolean) {
     try {
-      await updateDoc(doc(db, "advertisements", adId), {
-        active: !currentStatus,
+      await updateDoc({ collectionId: "ads", id: adId }, {
+        isActive: !currentStatus,
       });
 
       toast({
@@ -128,7 +132,7 @@ export default function AdsPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette publicité ?")) return;
 
     try {
-      await deleteDoc(doc(db, "advertisements", adId));
+      await deleteDoc({ collectionId: "ads", id: adId });
       toast({
         title: "Publicité supprimée",
         description: "La publicité a été supprimée avec succès",
