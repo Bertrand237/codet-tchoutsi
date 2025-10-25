@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, where, orderBy, limit } from "firebase/firestore";
+import { collection, query, getDocs, where, orderBy, limit, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper } from "lucide-react";
+import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper, BarChart3, LineChart } from "lucide-react";
 import type { Statistics } from "@shared/schema";
+import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function DashboardPage() {
   const { userProfile } = useAuth();
@@ -22,6 +23,9 @@ export default function DashboardPage() {
     completedProjects: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [projectsData, setProjectsData] = useState<any[]>([]);
+  const [paymentsData, setPaymentsData] = useState<any[]>([]);
+  const [budgetData, setBudgetData] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchStats() {
@@ -37,6 +41,7 @@ export default function DashboardPage() {
           projectsSnap,
           activeProjectsSnap,
           completedProjectsSnap,
+          budgetSnap,
         ] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "payments")),
@@ -48,6 +53,7 @@ export default function DashboardPage() {
           getDocs(collection(db, "projects")),
           getDocs(query(collection(db, "projects"), where("statut", "==", "en_cours"))),
           getDocs(query(collection(db, "projects"), where("statut", "==", "terminé"))),
+          getDocs(collection(db, "budget_transactions")),
         ]);
 
         const totalAmount = paymentsSnap.docs.reduce((sum, doc) => sum + (doc.data().montant || 0), 0);
@@ -65,6 +71,79 @@ export default function DashboardPage() {
           activeProjects: activeProjectsSnap.size,
           completedProjects: completedProjectsSnap.size,
         });
+
+        // Projects by status
+        const projectsStatusMap: Record<string, number> = {
+          "planifié": 0,
+          "en_cours": 0,
+          "en_pause": 0,
+          "terminé": 0,
+          "archivé": 0,
+        };
+        projectsSnap.docs.forEach((doc) => {
+          const status = doc.data().statut;
+          if (projectsStatusMap[status] !== undefined) {
+            projectsStatusMap[status]++;
+          }
+        });
+        const projectsChartData = Object.entries(projectsStatusMap).map(([name, value]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          value,
+        }));
+        setProjectsData(projectsChartData);
+
+        // Payments by month (last 6 months)
+        const monthlyPayments: Record<string, number> = {};
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthKey = date.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+          monthlyPayments[monthKey] = 0;
+        }
+
+        paymentsSnap.docs.forEach((doc) => {
+          const data = doc.data();
+          const paymentDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date);
+          const monthKey = paymentDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+          if (monthlyPayments[monthKey] !== undefined) {
+            monthlyPayments[monthKey] += data.montant || 0;
+          }
+        });
+
+        const paymentsChartData = Object.entries(monthlyPayments).map(([month, montant]) => ({
+          month,
+          montant,
+        }));
+        setPaymentsData(paymentsChartData);
+
+        // Budget by month (last 6 months)
+        const monthlyBudget: Record<string, { revenus: number; dépenses: number }> = {};
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const monthKey = date.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+          monthlyBudget[monthKey] = { revenus: 0, dépenses: 0 };
+        }
+
+        budgetSnap.docs.forEach((doc) => {
+          const data = doc.data();
+          const transactionDate = data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date);
+          const monthKey = transactionDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+          if (monthlyBudget[monthKey]) {
+            if (data.type === "revenu") {
+              monthlyBudget[monthKey].revenus += data.montant || 0;
+            } else if (data.type === "dépense") {
+              monthlyBudget[monthKey].dépenses += data.montant || 0;
+            }
+          }
+        });
+
+        const budgetChartData = Object.entries(monthlyBudget).map(([month, values]) => ({
+          month,
+          revenus: values.revenus,
+          dépenses: values.dépenses,
+        }));
+        setBudgetData(budgetChartData);
+
       } catch (error) {
         console.error("Error fetching statistics:", error);
       } finally {
@@ -274,6 +353,87 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Projects by Status Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Projets par Statut
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={projectsData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {projectsData.map((entry, index) => {
+                    const COLORS = ['#60a5fa', '#0A7D33', '#f59e0b', '#10b981', '#6b7280'];
+                    return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                  })}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Payments by Month Line Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-primary" />
+              Évolution des Paiements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsLineChart data={paymentsData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(value) => `${value?.toLocaleString()} FCFA`} />
+                <Legend />
+                <Line type="monotone" dataKey="montant" name="Montant" stroke="#0A7D33" strokeWidth={2} />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Budget Revenue vs Expenses Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            Budget: Revenus vs Dépenses
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={budgetData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(value) => `${value?.toLocaleString()} FCFA`} />
+              <Legend />
+              <Bar dataKey="revenus" name="Revenus" fill="#10b981" />
+              <Bar dataKey="dépenses" name="Dépenses" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }
