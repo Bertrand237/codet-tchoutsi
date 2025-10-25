@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -41,13 +42,40 @@ function AuthenticatedRouter() {
 
   if (!currentUser) {
     return (
-      <Switch>
-        <Route path="/login" component={LoginPage} />
-        <Route path="/register" component={RegisterPage} />
-        <Route path="*">
-          <Redirect to="/login" />
-        </Route>
-      </Switch>
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-background sticky top-0 z-10">
+          <div className="container mx-auto flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-xl font-bold text-primary-foreground">C</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">CODET</h1>
+                <p className="text-xs text-muted-foreground">Comité de Développement</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Button asChild variant="ghost" size="sm">
+                <a href="/login">Connexion</a>
+              </Button>
+              <Button asChild size="sm">
+                <a href="/register">S'inscrire</a>
+              </Button>
+            </div>
+          </div>
+        </header>
+        <main>
+          <Switch>
+            <Route path="/login" component={LoginPage} />
+            <Route path="/register" component={RegisterPage} />
+            <Route path="/blog" component={BlogPage} />
+            <Route path="*">
+              <Redirect to="/blog" />
+            </Route>
+          </Switch>
+        </main>
+      </div>
     );
   }
 
@@ -125,11 +153,7 @@ function AuthenticatedRouter() {
                 </ProtectedRoute>
               </Route>
 
-              <Route path="/blog">
-                <ProtectedRoute>
-                  <BlogPage />
-                </ProtectedRoute>
-              </Route>
+              <Route path="/blog" component={BlogPage} />
 
               <Route path="/ads">
                 <ProtectedRoute allowedRoles={["admin", "président"]}>

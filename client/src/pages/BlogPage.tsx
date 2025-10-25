@@ -27,7 +27,7 @@ export default function BlogPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const canManageBlog = userProfile?.role === "admin" || userProfile?.role === "président";
+  const canManageBlog = userProfile && (userProfile.role === "admin" || userProfile.role === "président");
 
   useEffect(() => {
     fetchPosts();
