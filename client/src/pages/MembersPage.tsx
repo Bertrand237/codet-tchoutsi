@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Search, UserCog, Mail, Phone, Calendar } from "lucide-react";
+import { Users, Search, UserCog, Mail, Phone, Calendar, Download } from "lucide-react";
 import type { User, UserRole } from "@shared/schema";
+import { exportToCSV } from "@/lib/pdfUtils";
 
 export default function MembersPage() {
   const { userProfile } = useAuth();
@@ -115,6 +116,21 @@ export default function MembersPage() {
     }
   };
 
+  function handleExportCSV() {
+    exportToCSV(filteredMembers, "membres_codet", {
+      displayName: "Nom",
+      email: "Email",
+      role: "Rôle",
+      phoneNumber: "Téléphone",
+      createdAt: "Date de Création",
+    });
+
+    toast({
+      title: "Export réussi",
+      description: `${filteredMembers.length} membres exportés en CSV`,
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -130,6 +146,15 @@ export default function MembersPage() {
           <h1 className="text-3xl font-bold text-foreground">Gestion des Membres</h1>
           <p className="text-muted-foreground">Administration et gestion des utilisateurs du comité</p>
         </div>
+        <Button 
+          onClick={handleExportCSV} 
+          variant="outline" 
+          disabled={filteredMembers.length === 0}
+          data-testid="button-export-csv"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exporter CSV
+        </Button>
       </div>
 
       {/* Statistics Cards */}

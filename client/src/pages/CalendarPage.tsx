@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar as CalendarIcon, Plus, MapPin, Clock, Users } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, MapPin, Clock, Users, Download } from "lucide-react";
 import type { Event as CalendarEvent, EventType } from "@shared/schema";
 import { Calendar, momentLocalizer, View, Views } from "react-big-calendar";
 import moment from "moment";
 import "moment/locale/fr";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { exportToCSV } from "@/lib/pdfUtils";
 
 moment.locale("fr");
 const localizer = momentLocalizer(moment);
@@ -204,6 +205,22 @@ export default function CalendarPage() {
     setEventDetailsOpen(true);
   };
 
+  function handleExportCSV() {
+    exportToCSV(events, "CODET_Evenements", {
+      titre: "Titre",
+      type: "Type",
+      dateDebut: "Date Début",
+      dateFin: "Date Fin",
+      lieu: "Lieu",
+      organisateurNom: "Organisateur"
+    });
+
+    toast({
+      title: "Export réussi",
+      description: `${events.length} événements exportés en CSV`,
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -219,14 +236,24 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold text-foreground">Calendrier</h1>
           <p className="text-muted-foreground">Gestion des événements et réunions du comité</p>
         </div>
-        {canManageEvents && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-event">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvel Événement
-              </Button>
-            </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={handleExportCSV}
+            disabled={events.length === 0}
+            data-testid="button-export-csv"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          {canManageEvents && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-add-event">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nouvel Événement
+                </Button>
+              </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Créer un événement</DialogTitle>
@@ -333,6 +360,7 @@ export default function CalendarPage() {
               </DialogContent>
             </Dialog>
           )}
+        </div>
       </div>
 
       {/* Stats */}
