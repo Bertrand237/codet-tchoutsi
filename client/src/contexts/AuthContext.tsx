@@ -68,39 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(user);
       
       if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setUserProfile({
-            id: user.uid,
-            email: data.email,
-            displayName: data.displayName,
-            role: data.role,
-            photoURL: data.photoURL,
-            phoneNumber: data.phoneNumber,
-            createdAt: convertToDate(data.createdAt),
-          });
-        } else {
-          // Si le profil n'existe pas, le créer automatiquement
-          console.log("Profil utilisateur non trouvé, création automatique...");
-          
-          // Vérifier si c'est le premier utilisateur
-          const usersSnapshot = await getDocs(collection(db, "users"));
-          const isFirstUser = usersSnapshot.empty;
-          
-          const newProfile = {
-            email: user.email || "",
-            displayName: user.displayName || user.email?.split("@")[0] || "Utilisateur",
-            role: isFirstUser ? "admin" : "membre",
-            createdAt: serverTimestamp(),
-          };
-          
-          await setDoc(doc(db, "users", user.uid), newProfile);
-          
-          // Recharger le profil
-          const updatedDoc = await getDoc(doc(db, "users", user.uid));
-          if (updatedDoc.exists()) {
-            const data = updatedDoc.data();
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
             setUserProfile({
               id: user.uid,
               email: data.email,
@@ -110,7 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               phoneNumber: data.phoneNumber,
               createdAt: convertToDate(data.createdAt),
             });
+          } else {
+            // Profil n'existe pas - rediriger vers login pour recréer le compte
+            console.log("Profil utilisateur non trouvé dans Firestore");
+            setUserProfile(null);
           }
+        } catch (error) {
+          console.error("Erreur lors du chargement du profil:", error);
+          setUserProfile(null);
         }
       } else {
         setUserProfile(null);
