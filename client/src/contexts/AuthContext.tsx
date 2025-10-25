@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Créer le compte utilisateur
       const user = await account.create(ID.unique(), email, password, displayName);
       
+      // Se connecter immédiatement pour avoir les permissions
+      await account.createEmailPasswordSession(email, password);
+      
       // Vérifier si c'est le premier utilisateur
       const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
       const isFirstUser = usersListResponse.total === 0;
@@ -50,11 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      // Créer le profil utilisateur dans la base de données
+      // Créer le profil utilisateur dans la base de données (maintenant qu'on est connecté)
       await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
-      
-      // Se connecter automatiquement
-      await account.createEmailPasswordSession(email, password);
       
       // Recharger les informations utilisateur
       const currentUser = await account.get();
