@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Home,
   Users,
@@ -107,13 +108,18 @@ export function AppSidebar() {
   const { userProfile, signOut } = useAuth();
   const [location] = useLocation();
 
-  const filteredItems = menuItems.filter(
-    (item) => userProfile && item.roles.includes(userProfile.role)
-  );
+  const filteredItems = useMemo(() => {
+    if (!userProfile) return [];
+    return menuItems.filter((item) => item.roles.includes(userProfile.role));
+  }, [userProfile]);
 
   const handleSignOut = async () => {
     await signOut();
   };
+  
+  if (!userProfile) {
+    return null;
+  }
 
   return (
     <Sidebar>
