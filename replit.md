@@ -102,4 +102,19 @@ Required secrets in Replit:
     - VotesPage, CalendarPage, ChatPage (real-time), BlogPage, AdsPage, CensusPage
   - ✅ Replaced Firebase Storage with Appwrite Storage (single bucket with virtual folders)
   - ✅ Replaced Firestore Timestamps with Appwrite ISO date strings
-  - ✅ Application successfully compiles and runs
+  - ✅ **Bug Fixes & Schema Corrections** (2025-10-25):
+    - Fixed infinite render loop in AppSidebar using useMemo and null checks
+    - Fixed authentication flow to create session BEFORE profile creation
+    - Corrected all Appwrite attribute naming (status vs statut, videoUrl vs videoURL, isActive vs active)
+    - Fixed all updateDoc/deleteDoc calls to use proper {collectionId, id} format across 8 pages
+    - Added missing Appwrite attributes via migration scripts:
+      * payments: added `status` (optional)
+      * projects: added `status`, `priority`, `budget`, `progress` (all optional)
+      * blog-posts: added `isPublished`, `excerpt`, `authorId`, `authorName`, `publishedAt`, `updatedAt` (all optional)
+      * ads: added `isActive` (optional)
+    - Fixed query field mismatches:
+      * PaymentsPage: corrected queries to use `createdAt` and `userId` instead of `date` and `membreId`
+      * BlogPage: updated to use `isPublished` instead of `published`, `imageUrl` instead of `imageURL`
+    - Created diagnostic/migration scripts: `check-attributes.ts`, `add-missing-attributes.ts`, `add-boolean-attributes.ts`, `fix-blog-schema.ts`
+  - ✅ Application successfully compiles and runs without errors
+  - ✅ All schema-code mismatches resolved and verified by architect review

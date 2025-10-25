@@ -158,12 +158,11 @@ export default function VotesPage() {
     }
 
     try {
-      const pollRef = doc(db, "polls", pollId);
       const updatedOptions = poll.options.map((opt) =>
         opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
       );
 
-      await updateDoc(pollRef, {
+      await updateDoc({ collectionId: "polls", id: pollId }, {
         options: updatedOptions,
         votants: arrayUnion(userProfile.id),
       });

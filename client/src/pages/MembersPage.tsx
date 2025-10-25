@@ -63,7 +63,7 @@ export default function MembersPage() {
     setUpdating(true);
 
     try {
-      await updateDoc(doc(db, "users", userId), {
+      await updateDoc({ collectionId: "users", id: userId }, {
         role: newRole,
       });
 

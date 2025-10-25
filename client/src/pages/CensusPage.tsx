@@ -154,7 +154,7 @@ export default function CensusPage() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette famille ?")) return;
 
     try {
-      await deleteDoc(doc(db, "families", familyId));
+      await deleteDoc({ collectionId: "families", id: familyId });
       toast({
         title: "Famille supprimée",
         description: "La famille a été supprimée avec succès",

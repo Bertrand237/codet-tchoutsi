@@ -52,12 +52,22 @@ export default function ProjectsPage() {
 
         return {
           id: doc.$id,
-          ...data,
-          dateDebut: toDate(data.dateDebut),
-          dateEcheance: toDate(data.dateEcheance),
+          titre: data.title,
+          description: data.description,
+          statut: data.status as ProjectStatus,
+          priorite: data.priority as ProjectPriority || "moyenne",
+          budget: data.budget || 0,
+          budgetUtilise: data.budgetUtilise || 0,
+          responsableId: data.responsible || data.createdBy,
+          responsableNom: data.responsableNom || "Non défini",
+          dateDebut: toDate(data.startDate) || new Date(),
+          dateEcheance: toDate(data.endDate) || new Date(),
           dateAchevement: data.dateAchevement ? toDate(data.dateAchevement) : undefined,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
+          membresAssignes: data.membresAssignes || [],
+          tags: data.tags || [],
+          progression: data.progress || 0,
+          createdAt: toDate(data.createdAt) || new Date(),
+          updatedAt: toDate(data.updatedAt) || new Date(),
         };
       }) as Project[];
 
@@ -82,21 +92,17 @@ export default function ProjectsPage() {
 
     try {
       const projectData = {
-        titre: formData.titre,
+        title: formData.titre,
         description: formData.description,
-        statut: formData.statut,
-        priorite: formData.priorite,
+        status: formData.statut,
+        priority: formData.priorite,
         budget: formData.budget ? parseFloat(formData.budget) : 0,
-        budgetUtilise: 0,
-        responsableId: userProfile.id,
-        responsableNom: userProfile.displayName,
-        dateDebut: new Date(new Date(formData.dateDebut).toISOString()),
-        dateEcheance: new Date(new Date(formData.dateEcheance).toISOString()),
-        membresAssignes: [],
-        tags: [],
-        progression: parseInt(formData.progression),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        progress: parseInt(formData.progression),
+        responsible: userProfile.id,
+        startDate: new Date(formData.dateDebut).toISOString(),
+        endDate: new Date(formData.dateEcheance).toISOString(),
+        createdBy: userProfile.id,
+        createdAt: new Date().toISOString(),
       };
 
       await addDoc("projects", projectData);
@@ -133,16 +139,15 @@ export default function ProjectsPage() {
   async function updateProjectStatus(projectId: string, newStatus: ProjectStatus) {
     try {
       const updateData: any = {
-        statut: newStatus,
-        updatedAt: serverTimestamp(),
+        status: newStatus,
       };
 
       if (newStatus === "terminé") {
-        updateData.dateAchevement = serverTimestamp();
-        updateData.progression = 100;
+        updateData.dateAchevement = new Date().toISOString();
+        updateData.progress = 100;
       }
 
-      await updateDoc(doc("projects", projectId), updateData);
+      await updateDoc({ collectionId: "projects", id: projectId }, updateData);
 
       toast({
         title: "Statut mis à jour",

@@ -23,7 +23,7 @@ export default function BlogPage() {
     title: "",
     content: "",
     excerpt: "",
-    published: false,
+    isPublished: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -39,7 +39,7 @@ export default function BlogPage() {
       let q = query(postsRef, orderBy("createdAt", "desc"));
       
       if (!canManageBlog) {
-        q = query(postsRef, where("published", "==", true), orderBy("createdAt", "desc"));
+        q = query(postsRef, where("isPublished", "==", true), orderBy("createdAt", "desc"));
       }
 
       const snapshot = await getDocs(q);
@@ -83,11 +83,12 @@ export default function BlogPage() {
         title: formData.title,
         content: formData.content,
         excerpt: formData.excerpt,
-        imageURL,
+        imageUrl: imageURL,
+        author: userProfile.displayName,
         authorId: userProfile.id,
         authorName: userProfile.displayName,
-        published: formData.published,
-        publishedAt: formData.published ? new Date().toISOString() : null,
+        isPublished: formData.isPublished,
+        publishedAt: formData.isPublished ? new Date().toISOString() : null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -96,11 +97,11 @@ export default function BlogPage() {
 
       toast({
         title: "Article créé",
-        description: formData.published ? "L'article a été publié" : "L'article a été enregistré en brouillon",
+        description: formData.isPublished ? "L'article a été publié" : "L'article a été enregistré en brouillon",
       });
 
       setDialogOpen(false);
-      setFormData({ title: "", content: "", excerpt: "", published: false });
+      setFormData({ title: "", content: "", excerpt: "", isPublished: false });
       setImageFile(null);
       fetchPosts();
     } catch (error) {
@@ -117,8 +118,8 @@ export default function BlogPage() {
 
   async function togglePublishStatus(postId: string, currentStatus: boolean) {
     try {
-      await updateDoc(doc(db, "blog", postId), {
-        published: !currentStatus,
+      await updateDoc({ collectionId: "blog-posts", id: postId }, {
+        isPublished: !currentStatus,
         publishedAt: !currentStatus ? new Date().toISOString() : null,
         updatedAt: new Date().toISOString(),
       });
@@ -230,8 +231,8 @@ export default function BlogPage() {
                   <input
                     type="checkbox"
                     id="published"
-                    checked={formData.published}
-                    onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
+                    checked={formData.isPublished}
+                    onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
                     data-testid="checkbox-published"
                     className="h-4 w-4"
                   />
@@ -263,16 +264,16 @@ export default function BlogPage() {
           posts.map((post) => (
             <Card key={post.id} className="hover-elevate" data-testid={`card-post-${post.id}`}>
               <div className="grid md:grid-cols-3 gap-6">
-                {post.imageURL && (
+                {post.imageUrl && (
                   <div className="md:col-span-1">
                     <img
-                      src={post.imageURL}
+                      src={post.imageUrl}
                       alt={post.title}
                       className="w-full h-48 md:h-full object-cover rounded-l-lg"
                     />
                   </div>
                 )}
-                <div className={post.imageURL ? "md:col-span-2" : "md:col-span-3"}>
+                <div className={post.imageUrl ? "md:col-span-2" : "md:col-span-3"}>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -291,7 +292,7 @@ export default function BlogPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {post.published ? (
+                        {post.isPublished ? (
                           <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                             Publié
                           </Badge>
@@ -302,10 +303,10 @@ export default function BlogPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => togglePublishStatus(post.id, post.published)}
+                            onClick={() => togglePublishStatus(post.id, post.isPublished)}
                             data-testid="button-toggle-publish"
                           >
-                            {post.published ? "Dépublier" : "Publier"}
+                            {post.isPublished ? "Dépublier" : "Publier"}
                           </Button>
                         )}
                       </div>

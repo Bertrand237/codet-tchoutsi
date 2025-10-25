@@ -44,14 +44,14 @@ export default function DashboardPage() {
         ] = await Promise.all([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "payments")),
-          getDocs(query(collection(db, "payments"), where("statut", "==", "en_attente"))),
-          getDocs(query(collection(db, "payments"), where("statut", "==", "validé"))),
+          getDocs(query(collection(db, "payments"), where("status", "==", "en_attente"))),
+          getDocs(query(collection(db, "payments"), where("status", "==", "validé"))),
           getDocs(collection(db, "families")),
           getDocs(query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(100))),
           getDocs(collection(db, "blog-posts")),
           getDocs(collection(db, "projects")),
-          getDocs(query(collection(db, "projects"), where("statut", "==", "en_cours"))),
-          getDocs(query(collection(db, "projects"), where("statut", "==", "terminé"))),
+          getDocs(query(collection(db, "projects"), where("status", "==", "en_cours"))),
+          getDocs(query(collection(db, "projects"), where("status", "==", "terminé"))),
           getDocs(collection(db, "budget")),
         ]);
 
@@ -80,7 +80,7 @@ export default function DashboardPage() {
           "archivé": 0,
         };
         projectsSnap.documents.forEach((doc) => {
-          const status = doc.statut;
+          const status = doc.status;
           if (projectsStatusMap[status] !== undefined) {
             projectsStatusMap[status]++;
           }

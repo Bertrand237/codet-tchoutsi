@@ -34,18 +34,25 @@ export default function PaymentsPage() {
   async function fetchPayments() {
     try {
       const paymentsRef = collection(db, "payments");
-      let q = query(paymentsRef, orderBy("date", "desc"));
+      let q = query(paymentsRef, orderBy("createdAt", "desc"));
       
       if (userProfile?.role === "membre") {
-        q = query(paymentsRef, where("membreId", "==", userProfile.id), orderBy("date", "desc"));
+        q = query(paymentsRef, where("userId", "==", userProfile.id), orderBy("createdAt", "desc"));
       }
 
       const snapshot = await getDocs(q);
       const paymentsData = snapshot.documents.map((doc) => ({
         id: doc.$id,
-        ...doc,
-        date: toDate(doc.date) || new Date(),
-        dateValidation: toDate(doc.dateValidation),
+        membreId: doc.userId,
+        membreNom: doc.userName || "Inconnu",
+        montant: doc.amount || 0,
+        date: toDate(doc.createdAt) || new Date(),
+        mode: doc.paymentType || "autre",
+        preuveURL: doc.proofUrl,
+        statut: doc.status || "en_attente",
+        commentaire: doc.description || "",
+        validePar: doc.validatedBy,
+        dateValidation: toDate(doc.validatedAt),
         createdAt: toDate(doc.createdAt) || new Date(),
       })) as Payment[];
 
@@ -77,16 +84,15 @@ export default function PaymentsPage() {
         preuveURL = await getDownloadURL(storageRef);
       }
 
-      const paymentData: Omit<InsertPayment, "statut"> & { statut: "en_attente"; createdAt: string } = {
-        membreId: userProfile.id,
-        membreNom: userProfile.displayName,
-        montant: parseFloat(formData.montant),
-        date: new Date(),
-        mode: formData.mode,
-        preuveURL,
-        commentaire: formData.commentaire,
+      const paymentData = {
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        amount: parseFloat(formData.montant),
+        paymentType: formData.mode,
+        description: formData.commentaire,
+        proofUrl: preuveURL,
+        status: "en_attente",
         createdAt: new Date().toISOString(),
-        statut: "en_attente",
       };
 
       await addDoc("payments", paymentData);
@@ -116,10 +122,10 @@ export default function PaymentsPage() {
     if (!userProfile) return;
 
     try {
-      await updateDoc(doc("payments", paymentId), {
-        statut: status,
-        validePar: userProfile.id,
-        dateValidation: new Date().toISOString(),
+      await updateDoc({ collectionId: "payments", id: paymentId }, {
+        status: status,
+        validatedBy: userProfile.id,
+        validatedAt: new Date().toISOString(),
       });
 
       toast({
