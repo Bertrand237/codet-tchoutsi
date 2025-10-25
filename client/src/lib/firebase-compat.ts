@@ -149,13 +149,18 @@ export function arrayUnion(...elements: any[]) {
 // ==================== Storage Operations ====================
 
 export function ref(storageRef: any, path: string) {
-  return { path, bucket: STORAGE_BUCKET_ID };
+  return { path, bucket: STORAGE_BUCKET_ID, fileId: undefined as string | undefined };
 }
 
-export async function uploadBytes(fileRef: { path: string; bucket: string }, file: File) {
+export async function uploadBytes(fileRef: { path: string; bucket: string; fileId?: string }, file: File) {
   const fileId = ID.unique();
-  await appwriteStorage.createFile(fileRef.bucket, fileId, file);
-  return { ref: { ...fileRef, fileId } };
+  const uploadResult = await appwriteStorage.createFile(fileRef.bucket, fileId, file);
+  // Update the ref with fileId so getDownloadURL can use it
+  fileRef.fileId = uploadResult.$id;
+  return { 
+    ref: { ...fileRef, fileId: uploadResult.$id },
+    metadata: uploadResult
+  };
 }
 
 export async function getDownloadURL(fileRef: { path: string; bucket: string; fileId?: string }) {

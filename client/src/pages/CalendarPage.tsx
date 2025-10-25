@@ -16,7 +16,7 @@ import moment from "moment";
 import "moment/locale/fr";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { exportToCSV } from "@/lib/pdfUtils";
-import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
+import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate, orderBy } from '@/lib/firebase-compat';
 
 moment.locale("fr");
 const localizer = momentLocalizer(moment);

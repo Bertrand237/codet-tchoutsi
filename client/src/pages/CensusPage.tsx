@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Users, Trash2, Edit } from "lucide-react";
 import type { Family, FamilyMember } from "@shared/schema";
-import { addDoc, db, deleteDoc, doc, getDocs, query, toDate } from '@/lib/firebase-compat';
+import { addDoc, db, deleteDoc, doc, getDocs, query, toDate, where } from '@/lib/firebase-compat';
 
 export default function CensusPage() {
   const { userProfile } = useAuth();

@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, TrendingDown, Plus, DollarSign, Calendar, Filter, FileDown, FileText } from "lucide-react";
 import type { BudgetTransaction, TransactionType, TransactionCategory } from "@shared/schema";
 import { exportBudgetPDF, exportToCSV } from "@/lib/pdfUtils";
-import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate } from '@/lib/firebase-compat';
+import { Timestamp, addDoc, getDocs, query, serverTimestamp, toDate, orderBy } from '@/lib/firebase-compat';
 
 export default function BudgetPage() {
   const { userProfile } = useAuth();

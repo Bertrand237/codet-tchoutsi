@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Video, Upload, Trash2, Play, Pause } from "lucide-react";
 import type { Advertisement } from "@shared/schema";
-import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes } from '@/lib/firebase-compat';
+import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy } from '@/lib/firebase-compat';
 
 export default function AdsPage() {
   const { toast } = useToast();

@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Vote, Plus, Users, CheckCircle, Calendar } from "lucide-react";
 import type { Poll, PollOption } from "@shared/schema";
-import { Timestamp, addDoc, arrayUnion, db, doc, getDocs, query, serverTimestamp, toDate, updateDoc } from '@/lib/firebase-compat';
+import { Timestamp, addDoc, arrayUnion, db, doc, getDocs, query, serverTimestamp, toDate, updateDoc, orderBy } from '@/lib/firebase-compat';
 
 export default function VotesPage() {
   const { userProfile } = useAuth();

@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, Search, UserCog, Mail, Phone, Calendar, Download } from "lucide-react";
 import type { User, UserRole } from "@shared/schema";
 import { exportToCSV } from "@/lib/pdfUtils";
-import { db, doc, getDocs, query, toDate, updateDoc } from '@/lib/firebase-compat';
+import { db, doc, getDocs, query, toDate, updateDoc, orderBy } from '@/lib/firebase-compat';
 
 export default function MembersPage() {
   const { userProfile } = useAuth();

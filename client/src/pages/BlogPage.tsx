@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Newspaper, Upload, Calendar } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
-import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes } from '@/lib/firebase-compat';
+import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy, where } from '@/lib/firebase-compat';
 
 export default function BlogPage() {
   const { userProfile } = useAuth();
