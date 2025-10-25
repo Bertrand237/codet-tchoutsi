@@ -163,6 +163,82 @@ export async function uploadBytes(fileRef: { path: string; bucket: string; fileI
   };
 }
 
+export function uploadBytesResumable(fileRef: { path: string; bucket: string; fileId?: string }, file: File) {
+  const fileId = ID.unique();
+  let uploadProgress = 0;
+  const listeners: { [key: string]: any[] } = {
+    state_changed: [],
+    complete: [],
+    error: []
+  };
+
+  // Simulate progress with actual upload
+  const uploadTask = {
+    on: (event: string, progressCallback?: (snapshot: any) => void, errorCallback?: (error: any) => void, completeCallback?: () => void) => {
+      if (event === 'state_changed') {
+        if (progressCallback) listeners.state_changed.push(progressCallback);
+        if (errorCallback) listeners.error.push(errorCallback);
+        if (completeCallback) listeners.complete.push(completeCallback);
+      }
+      return uploadTask;
+    },
+    then: (successCallback?: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
+      return uploadPromise.then(successCallback, errorCallback);
+    },
+    catch: (errorCallback: (error: any) => void) => {
+      return uploadPromise.catch(errorCallback);
+    }
+  };
+
+  const uploadPromise = (async () => {
+    let progressInterval: NodeJS.Timeout | null = null;
+    try {
+      // Simulate progress updates
+      progressInterval = setInterval(() => {
+        if (uploadProgress < 90) {
+          uploadProgress += 10;
+          listeners.state_changed.forEach(cb => cb({
+            bytesTransferred: (file.size * uploadProgress) / 100,
+            totalBytes: file.size,
+            state: 'running',
+            ref: fileRef
+          }));
+        }
+      }, 100);
+
+      const uploadResult = await appwriteStorage.createFile(fileRef.bucket, fileId, file);
+      clearInterval(progressInterval);
+      progressInterval = null;
+      
+      // Final progress update
+      uploadProgress = 100;
+      listeners.state_changed.forEach(cb => cb({
+        bytesTransferred: file.size,
+        totalBytes: file.size,
+        state: 'success',
+        ref: fileRef
+      }));
+
+      fileRef.fileId = uploadResult.$id;
+      const snapshot = { 
+        ref: { ...fileRef, fileId: uploadResult.$id },
+        metadata: uploadResult
+      };
+
+      listeners.complete.forEach(cb => cb());
+      return snapshot;
+    } catch (error) {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      listeners.error.forEach(cb => cb(error));
+      throw error;
+    }
+  })();
+
+  return uploadTask;
+}
+
 export async function getDownloadURL(fileRef: { path: string; bucket: string; fileId?: string }) {
   if (!fileRef.fileId) {
     throw new Error('File ID is required to get download URL');

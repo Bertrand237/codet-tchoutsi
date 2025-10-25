@@ -11,6 +11,7 @@ import {
   BarChart3,
   LogOut,
   FolderKanban,
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -160,22 +161,25 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={userProfile?.photoURL} />
-            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-              {userProfile?.displayName?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {userProfile?.displayName}
-            </p>
-            <p className="text-xs text-sidebar-foreground/70 truncate capitalize">
-              {userProfile?.role}
-            </p>
+        <Link href="/profile">
+          <div className="flex items-center gap-3 mb-3 p-2 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={userProfile?.photoURL} />
+              <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
+                {userProfile?.displayName?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {userProfile?.displayName}
+              </p>
+              <p className="text-xs text-sidebar-foreground/70 truncate capitalize">
+                {userProfile?.role}
+              </p>
+            </div>
+            <User className="h-4 w-4 text-sidebar-foreground/50" />
           </div>
-        </div>
+        </Link>
         <Button
           variant="outline"
           size="sm"

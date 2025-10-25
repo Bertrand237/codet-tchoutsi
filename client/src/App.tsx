@@ -22,6 +22,7 @@ import CensusPage from "@/pages/CensusPage";
 import ChatPage from "@/pages/ChatPage";
 import BlogPage from "@/pages/BlogPage";
 import AdsPage from "@/pages/AdsPage";
+import ProfilePage from "@/pages/ProfilePage";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -133,6 +134,12 @@ function AuthenticatedRouter() {
               <Route path="/ads">
                 <ProtectedRoute allowedRoles={["admin", "président"]}>
                   <AdsPage />
+                </ProtectedRoute>
+              </Route>
+
+              <Route path="/profile">
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               </Route>
 

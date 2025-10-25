@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Video, Upload, Trash2, Play, Pause } from "lucide-react";
 import type { Advertisement } from "@shared/schema";
-import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy } from '@/lib/firebase-compat';
+import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytesResumable, orderBy } from '@/lib/firebase-compat';
 
 export default function AdsPage() {
   const { toast } = useToast();
@@ -22,6 +23,7 @@ export default function AdsPage() {
     order: 0,
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     fetchAds();
@@ -68,32 +70,67 @@ export default function AdsPage() {
     }
 
     setSubmitting(true);
+    setUploadProgress(0);
 
     try {
       const storageRef = ref(storage, `ads/${Date.now()}_${videoFile.name}`);
-      await uploadBytes(storageRef, videoFile);
-      const videoURL = await getDownloadURL(storageRef);
+      const uploadTask = uploadBytesResumable(storageRef, videoFile);
 
-      const adData = {
-        title: formData.title,
-        description: "",
-        videoUrl: videoURL,
-        isActive: formData.active,
-        createdBy: "admin", // TODO: use current user ID
-        createdAt: new Date().toISOString(),
-      };
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          toast({
+            variant: "destructive",
+            title: "Erreur de téléchargement",
+            description: "Impossible de télécharger la vidéo",
+          });
+          setSubmitting(false);
+          setUploadProgress(0);
+        },
+        async () => {
+          try {
+            const snapshot = await uploadTask;
+            const videoURL = await getDownloadURL(snapshot.ref);
 
-      await addDoc("ads", adData);
+            const adData = {
+              title: formData.title,
+              description: "",
+              videoUrl: videoURL,
+              isActive: formData.active,
+              createdBy: "admin",
+              createdAt: new Date().toISOString(),
+            };
 
-      toast({
-        title: "Publicité ajoutée",
-        description: "La vidéo publicitaire a été enregistrée",
-      });
+            await addDoc("ads", adData);
 
-      setDialogOpen(false);
-      setFormData({ title: "", active: true, order: 0 });
-      setVideoFile(null);
-      fetchAds();
+            toast({
+              title: "Publicité ajoutée",
+              description: "La vidéo publicitaire a été enregistrée",
+            });
+
+            setDialogOpen(false);
+            setFormData({ title: "", active: true, order: 0 });
+            setVideoFile(null);
+            setUploadProgress(0);
+            setSubmitting(false);
+            fetchAds();
+          } catch (error) {
+            console.error("Error after upload:", error);
+            toast({
+              variant: "destructive",
+              title: "Erreur",
+              description: "Impossible de finaliser l'ajout de la publicité",
+            });
+            setSubmitting(false);
+            setUploadProgress(0);
+          }
+        }
+      );
     } catch (error) {
       console.error("Error creating ad:", error);
       toast({
@@ -101,8 +138,8 @@ export default function AdsPage() {
         title: "Erreur",
         description: "Impossible d'ajouter la publicité",
       });
-    } finally {
       setSubmitting(false);
+      setUploadProgress(0);
     }
   }
 
@@ -235,9 +272,19 @@ export default function AdsPage() {
                 </Label>
               </div>
 
+              {submitting && uploadProgress > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Téléchargement en cours...</span>
+                    <span className="font-medium">{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" data-testid="upload-progress" />
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="submit" disabled={submitting} data-testid="button-submit-ad">
-                  {submitting ? "Téléchargement..." : "Ajouter"}
+                  {submitting ? `Téléchargement... ${Math.round(uploadProgress)}%` : "Ajouter"}
                 </Button>
               </DialogFooter>
             </form>
