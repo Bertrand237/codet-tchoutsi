@@ -75,17 +75,15 @@ export type InsertFamily = z.infer<typeof insertFamilySchema>;
 // Message schema (chat)
 export const messageSchema = z.object({
   id: z.string(),
-  senderId: z.string(),
-  senderName: z.string(),
-  senderPhotoURL: z.string().optional(),
-  content: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  text: z.string(),
   timestamp: z.date(),
-  readBy: z.array(z.string()).optional(),
 });
 
 export type Message = z.infer<typeof messageSchema>;
 
-export const insertMessageSchema = messageSchema.omit({ id: true, timestamp: true, readBy: true });
+export const insertMessageSchema = messageSchema.omit({ id: true, timestamp: true });
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 // Blog post schema
@@ -94,10 +92,10 @@ export const blogPostSchema = z.object({
   title: z.string(),
   content: z.string(),
   excerpt: z.string(),
-  imageURL: z.string().optional(),
+  imageUrl: z.string().optional(),
   authorId: z.string(),
   authorName: z.string(),
-  published: z.boolean(),
+  isPublished: z.boolean(),
   publishedAt: z.date().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -112,8 +110,8 @@ export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export const advertisementSchema = z.object({
   id: z.string(),
   title: z.string(),
-  videoURL: z.string(),
-  active: z.boolean(),
+  videoUrl: z.string(),
+  isActive: z.boolean(),
   order: z.number(),
   createdAt: z.date(),
 });

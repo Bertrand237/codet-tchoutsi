@@ -38,7 +38,9 @@ export default function ChatPage() {
           
           return {
             id: doc.$id,
-            ...data,
+            userId: data.userId || data.senderId,
+            userName: data.userName || data.senderName,
+            text: data.text || data.content,
             timestamp,
           };
         })
@@ -62,12 +64,10 @@ export default function ChatPage() {
 
     try {
       await addDoc("messages", {
-        senderId: userProfile.id,
-        senderName: userProfile.displayName,
-        senderPhotoURL: userProfile.photoURL || "",
-        content: messageInput.trim(),
-        timestamp: serverTimestamp(),
-        readBy: [],
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        text: messageInput.trim(),
+        timestamp: new Date().toISOString(),
       });
 
       setMessageInput("");
@@ -112,7 +112,7 @@ export default function ChatPage() {
                 </div>
               ) : (
                 messages.map((message) => {
-                  const isOwnMessage = message.senderId === userProfile?.id;
+                  const isOwnMessage = message.userId === userProfile?.id;
                   
                   return (
                     <div
@@ -121,9 +121,8 @@ export default function ChatPage() {
                       data-testid={`message-${message.id}`}
                     >
                       <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarImage src={message.senderPhotoURL} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {message.senderName.charAt(0).toUpperCase()}
+                          {message.userName?.charAt(0).toUpperCase() || "?"}
                         </AvatarFallback>
                       </Avatar>
 
@@ -134,7 +133,7 @@ export default function ChatPage() {
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">
-                            {isOwnMessage ? "Vous" : message.senderName}
+                            {isOwnMessage ? "Vous" : message.userName}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {message.timestamp.toLocaleTimeString("fr-FR", {
@@ -152,7 +151,7 @@ export default function ChatPage() {
                           }`}
                         >
                           <p className="text-sm whitespace-pre-wrap break-words">
-                            {message.content}
+                            {message.text}
                           </p>
                         </div>
                       </div>

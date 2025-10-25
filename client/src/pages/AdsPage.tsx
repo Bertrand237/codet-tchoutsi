@@ -36,8 +36,8 @@ export default function AdsPage() {
       const adsData = snapshot.documents.map((doc) => ({
         id: doc.$id,
         title: doc.title,
-        videoURL: doc.videoUrl || doc.videoURL,
-        active: doc.isActive !== undefined ? doc.isActive : doc.active,
+        videoUrl: doc.videoUrl || doc.videoURL,
+        isActive: doc.isActive !== undefined ? doc.isActive : doc.active,
         order: doc.order || 0,
         createdAt: toDate(doc.createdAt) || new Date(),
       })) as Advertisement[];
@@ -261,7 +261,7 @@ export default function AdsPage() {
                   <CardTitle className="text-lg">{ad.title}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">Ordre: {ad.order}</p>
                 </div>
-                {ad.active ? (
+                {ad.isActive ? (
                   <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                     <Play className="h-3 w-3 mr-1" />
                     Actif
@@ -276,7 +276,7 @@ export default function AdsPage() {
               <CardContent>
                 <div className="aspect-video bg-muted rounded-lg mb-4 overflow-hidden">
                   <video
-                    src={ad.videoURL}
+                    src={ad.videoUrl}
                     controls
                     className="w-full h-full object-cover"
                     data-testid="video-preview"
@@ -289,10 +289,10 @@ export default function AdsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => toggleAdStatus(ad.id, ad.active)}
+                    onClick={() => toggleAdStatus(ad.id, ad.isActive)}
                     data-testid="button-toggle-status"
                   >
-                    {ad.active ? "Désactiver" : "Activer"}
+                    {ad.isActive ? "Désactiver" : "Activer"}
                   </Button>
                   <Button
                     variant="destructive"

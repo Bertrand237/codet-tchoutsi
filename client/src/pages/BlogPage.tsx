@@ -45,7 +45,13 @@ export default function BlogPage() {
       const snapshot = await getDocs(q);
       const postsData = snapshot.documents.map((doc) => ({
         id: doc.$id,
-        ...doc,
+        title: doc.title,
+        content: doc.content,
+        excerpt: doc.excerpt,
+        imageUrl: doc.imageUrl || doc.imageURL,
+        authorId: doc.authorId,
+        authorName: doc.authorName,
+        isPublished: doc.isPublished !== undefined ? doc.isPublished : doc.published,
         publishedAt: toDate(doc.publishedAt),
         createdAt: toDate(doc.createdAt) || new Date(),
         updatedAt: toDate(doc.updatedAt) || new Date(),

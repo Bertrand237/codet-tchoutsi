@@ -11,7 +11,7 @@ const DATABASE_ID = process.env.VITE_APPWRITE_DATABASE_ID || 'codet-db';
 async function checkAttributes() {
   console.log('🔍 Vérification des attributs Appwrite...\n');
 
-  const collectionsToCheck = ['events', 'families'];
+  const collectionsToCheck = ['messages'];
 
   for (const collectionId of collectionsToCheck) {
     try {
