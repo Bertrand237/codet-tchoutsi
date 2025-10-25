@@ -100,7 +100,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             createdAt: new Date(userDoc.createdAt),
           });
         } catch (error) {
-          console.error("Erreur lors du chargement du profil:", error);
+          // Si le profil n'existe pas, déconnecter l'utilisateur
+          console.error("Profil utilisateur introuvable, déconnexion...");
+          await account.deleteSession('current').catch(() => {});
+          setCurrentUser(null);
           setUserProfile(null);
         }
       } catch (error) {
