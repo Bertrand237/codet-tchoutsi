@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Newspaper, Upload, Calendar } from "lucide-react";
+import { Plus, Newspaper, Upload, Calendar, Pencil, Trash2 } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
-import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy, where } from '@/lib/firebase-compat';
+import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy, where, deleteDoc } from '@/lib/firebase-compat';
 
 export default function BlogPage() {
   const { userProfile } = useAuth();
@@ -26,6 +27,9 @@ export default function BlogPage() {
     isPublished: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   const canManageBlog = userProfile && (userProfile.role === "admin" || userProfile.role === "président");
 
@@ -142,6 +146,96 @@ export default function BlogPage() {
         variant: "destructive",
         title: "Erreur",
         description: "Impossible de mettre à jour le statut",
+      });
+    }
+  }
+
+  function handleEditPost(post: BlogPost) {
+    setEditingPost(post);
+    setFormData({
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt || "",
+      isPublished: post.isPublished,
+    });
+    setImageFile(null);
+    setEditDialogOpen(true);
+  }
+
+  async function handleUpdatePost(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingPost || !userProfile) return;
+
+    setSubmitting(true);
+
+    try {
+      let imageURL = editingPost.imageUrl;
+      
+      if (imageFile) {
+        const storageRef = ref(storage, `blog/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        imageURL = await getDownloadURL(storageRef);
+      }
+
+      const updateData: any = {
+        title: formData.title,
+        content: formData.content,
+        excerpt: formData.excerpt,
+        isPublished: formData.isPublished,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (imageFile) {
+        updateData.imageUrl = imageURL;
+      }
+
+      if (formData.isPublished && !editingPost.isPublished) {
+        updateData.publishedAt = new Date().toISOString();
+      }
+
+      await updateDoc({ collectionId: "blog-posts", id: editingPost.id }, updateData);
+
+      toast({
+        title: "Article modifié",
+        description: "L'article a été mis à jour avec succès",
+      });
+
+      setEditDialogOpen(false);
+      setEditingPost(null);
+      setFormData({ title: "", content: "", excerpt: "", isPublished: false });
+      setImageFile(null);
+      fetchPosts();
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de modifier l'article",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDeletePost() {
+    if (!deletingPostId) return;
+
+    try {
+      await deleteDoc({ collectionId: "blog-posts", id: deletingPostId });
+
+      toast({
+        title: "Article supprimé",
+        description: "L'article a été supprimé avec succès",
+      });
+
+      setDeletingPostId(null);
+      fetchPosts();
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer l'article",
       });
     }
   }
@@ -297,7 +391,7 @@ export default function BlogPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {post.isPublished ? (
                           <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
                             Publié
@@ -306,14 +400,34 @@ export default function BlogPage() {
                           <Badge variant="secondary">Brouillon</Badge>
                         )}
                         {canManageBlog && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => togglePublishStatus(post.id, post.isPublished)}
-                            data-testid="button-toggle-publish"
-                          >
-                            {post.isPublished ? "Dépublier" : "Publier"}
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => togglePublishStatus(post.id, post.isPublished)}
+                              data-testid="button-toggle-publish"
+                            >
+                              {post.isPublished ? "Dépublier" : "Publier"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPost(post)}
+                              data-testid={`button-edit-post-${post.id}`}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Modifier
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeletingPostId(post.id)}
+                              data-testid={`button-delete-post-${post.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Supprimer
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -328,6 +442,134 @@ export default function BlogPage() {
           ))
         )}
       </div>
+
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        setEditDialogOpen(open);
+        if (!open) {
+          setEditingPost(null);
+          setFormData({ title: "", content: "", excerpt: "", isPublished: false });
+          setImageFile(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier l'article</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de votre article
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdatePost} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Titre</Label>
+              <Input
+                id="edit-title"
+                type="text"
+                placeholder="Titre de l'article"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                data-testid="input-edit-title"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-excerpt">Extrait</Label>
+              <Input
+                id="edit-excerpt"
+                type="text"
+                placeholder="Résumé court de l'article"
+                value={formData.excerpt}
+                onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                required
+                data-testid="input-edit-excerpt"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-content">Contenu</Label>
+              <Textarea
+                id="edit-content"
+                placeholder="Contenu de l'article..."
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                required
+                rows={8}
+                data-testid="input-edit-content"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-image">Nouvelle image (optionnel)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="edit-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  data-testid="input-edit-image"
+                  className="h-12"
+                />
+                <Upload className="h-5 w-5 text-muted-foreground" />
+              </div>
+              {editingPost?.imageUrl && !imageFile && (
+                <p className="text-sm text-muted-foreground">Image actuelle conservée si aucune nouvelle image n'est uploadée</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-published"
+                checked={formData.isPublished}
+                onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
+                data-testid="checkbox-edit-published"
+                className="h-4 w-4"
+              />
+              <Label htmlFor="edit-published" className="cursor-pointer">
+                Publier l'article
+              </Label>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditDialogOpen(false)}
+                disabled={submitting}
+                data-testid="button-cancel-edit-post"
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={submitting} data-testid="button-save-edit-post">
+                {submitting ? "Mise à jour..." : "Enregistrer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingPostId} onOpenChange={(open) => !open && setDeletingPostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet article ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'article sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-post">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-post"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

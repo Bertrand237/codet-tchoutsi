@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download, FileDown } from "lucide-react";
+import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download, FileDown, Trash2 } from "lucide-react";
 import type { Payment, PaymentMode, InsertPayment } from "@shared/schema";
 import { exportPaymentsPDF, exportToCSV } from "@/lib/pdfUtils";
-import { addDoc, collection, db, doc, getDocs, getDownloadURL, orderBy, query, ref, storage, toDate, updateDoc, uploadBytes, where } from '@/lib/firebase-compat';
+import { addDoc, collection, db, doc, getDocs, getDownloadURL, orderBy, query, ref, storage, toDate, updateDoc, uploadBytes, where, deleteDoc } from '@/lib/firebase-compat';
 
 export default function PaymentsPage() {
   const { userProfile } = useAuth();
@@ -26,6 +27,7 @@ export default function PaymentsPage() {
     commentaire: "",
   });
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPayments();
@@ -143,6 +145,31 @@ export default function PaymentsPage() {
       });
     }
   }
+
+  async function handleDeletePayment() {
+    if (!deletingPaymentId) return;
+
+    try {
+      await deleteDoc({ collectionId: "payments", id: deletingPaymentId });
+
+      toast({
+        title: "Paiement supprimé",
+        description: "Le paiement a été supprimé avec succès",
+      });
+
+      setDeletingPaymentId(null);
+      fetchPayments();
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le paiement",
+      });
+    }
+  }
+
+  const canDelete = userProfile && (userProfile.role === "admin" || userProfile.role === "trésorier" || userProfile.role === "commissaire");
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -381,12 +408,45 @@ export default function PaymentsPage() {
                       </Button>
                     </>
                   )}
+
+                  {canDelete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingPaymentId(payment.id)}
+                      data-testid={`button-delete-payment-${payment.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      <AlertDialog open={!!deletingPaymentId} onOpenChange={(open) => !open && setDeletingPaymentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce paiement ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le paiement sera définitivement supprimé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-payment">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePayment}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-payment"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
