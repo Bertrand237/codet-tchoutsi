@@ -57,21 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Créer le profil utilisateur dans la base de données (maintenant qu'on est connecté)
       await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
       
-      // Recharger les informations utilisateur
-      const currentUser = await account.get();
-      setCurrentUser(currentUser);
-      
-      const userDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, currentUser.$id);
-      setUserProfile({
-        id: currentUser.$id,
-        email: userDoc.email,
-        displayName: userDoc.displayName,
-        role: userDoc.role,
-        profession: userDoc.profession,
-        photoURL: userDoc.photoURL,
-        phoneNumber: userDoc.phoneNumber,
-        createdAt: new Date(userDoc.createdAt),
-      });
+      // Rediriger vers le dashboard et laisser le useEffect charger l'utilisateur
+      window.location.href = '/dashboard';
     } catch (error: any) {
       console.error("Erreur d'inscription:", error?.message || error);
       throw new Error(error?.message || error?.type || "Erreur lors de l'inscription");

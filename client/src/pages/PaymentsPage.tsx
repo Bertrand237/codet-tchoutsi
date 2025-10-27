@@ -31,8 +31,10 @@ export default function PaymentsPage() {
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPayments();
-  }, [userProfile]);
+    if (userProfile) {
+      fetchPayments();
+    }
+  }, [userProfile?.id, userProfile?.role]);
 
   async function fetchPayments() {
     try {
