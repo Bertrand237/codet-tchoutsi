@@ -35,73 +35,73 @@ const menuItems = [
     title: "Tableau de bord",
     url: "/dashboard",
     icon: Home,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre", "visiteur"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"],
   },
   {
     title: "Projets",
     url: "/projects",
     icon: FolderKanban,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Membres",
     url: "/members",
     icon: Users,
-    roles: ["admin", "président", "trésorier", "commissaire"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire"],
   },
   {
     title: "Budget",
     url: "/budget",
     icon: Wallet,
-    roles: ["admin", "président", "trésorier"],
+    roles: ["admin", "président", "secretaire", "trésorier"],
   },
   {
     title: "Calendrier",
     url: "/calendar",
     icon: BarChart3,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Votes",
     url: "/votes",
     icon: Video,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Paiements",
     url: "/payments",
     icon: CreditCard,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Recensement",
     url: "/census",
     icon: UsersRound,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Messagerie",
     url: "/chat",
     icon: MessageSquare,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre"],
   },
   {
     title: "Blog",
     url: "/blog",
     icon: Newspaper,
-    roles: ["admin", "président", "trésorier", "commissaire", "membre", "visiteur"],
+    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"],
   },
   {
     title: "Publicités",
     url: "/ads",
     icon: Video,
-    roles: ["admin", "président"],
+    roles: ["admin", "président", "secretaire", "celcom"],
   },
   {
     title: "Statistiques",
     url: "/statistics",
     icon: BarChart3,
-    roles: ["admin", "président", "trésorier"],
+    roles: ["admin", "président", "secretaire", "trésorier"],
   },
 ];
 
@@ -112,7 +112,7 @@ export function AppSidebar() {
   const filteredItems = useMemo(() => {
     if (!userProfile) return [];
     return menuItems.filter((item) => item.roles.includes(userProfile.role));
-  }, [userProfile]);
+  }, [userProfile?.role]);
 
   const handleSignOut = async () => {
     await signOut();

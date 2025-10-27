@@ -15,7 +15,7 @@ The application features a React + TypeScript frontend utilizing Wouter for rout
 - Free tier: No credit card required, 75,000 monthly active users, 2GB storage, 10GB bandwidth
 
 Key features include:
-- **Authentication**: Appwrite Auth with role-based access control (admin, président, trésorier, commissaire, membre, visiteur).
+- **Authentication**: Appwrite Auth with role-based access control (admin, président, secretaire, trésorier, commissaire, celcom, membre, visiteur).
 - **Dashboard**: Real-time statistics, interactive Recharts graphs (pie, line, bar), and quick access to core functionalities.
 - **Data Management**:
     - **Payments**: Recording, proof uploads (Appwrite Storage), validation workflow, PDF/CSV exports.
@@ -159,3 +159,34 @@ Required secrets in Replit:
       * Integrated in sidebar footer with clickable avatar/name link
       * Uses Appwrite Storage for profile picture uploads
       * Auto-reload after successful profile update to reflect changes
+
+- **Date**: 2025-10-27
+- **New Features & Role Expansion**:
+  - ✅ **Video Download Functionality (AdsPage)**:
+    - Added download button for all video advertisements
+    - Accessible to all authenticated users (not just admins)
+    - Downloads use Appwrite Storage download URL
+  - ✅ **Payment Date Field (PaymentsPage)**:
+    - Added separate "paymentDate" field to specify actual payment date
+    - Distinct from "createdAt" (submission timestamp)
+    - Users can now record when payment was actually made vs when it was submitted
+    - Updated schema and UI with date picker
+  - ✅ **Profession Field in Registration**:
+    - Added optional "profession" field to user registration form
+    - Captured during signup and stored in user profile
+    - Updated schema, RegisterPage form, and AuthContext signUp function
+  - ✅ **Role System Expansion (6→8 roles)**:
+    - Added "secretaire" (secrétaire général) role:
+      * Identical privileges to président across all pages
+      * Can validate/delete payments
+      * Can manage blog and advertisements
+      * Can create polls and manage projects
+      * Updated PaymentsPage, BlogPage, AdsPage, VotesPage, MembersPage, BudgetPage, ProjectsPage, CalendarPage
+    - Added "celcom" (chargé de communication) role:
+      * Specialized for communication management
+      * Full access to blog creation/editing/deletion
+      * Full access to video advertisement management
+      * Can publish and manage content
+    - Updated ProfilePage to display role colors and privileges for both new roles
+    - All role permission checks updated consistently across 9 pages
+  - ✅ **Bug Fix**: Fixed missing président/secretaire in payment validation/deletion permissions

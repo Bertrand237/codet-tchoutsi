@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { account, databases, DATABASE_ID, COLLECTIONS } from "@/lib/appwrite";
 import { ID, Models, Query } from "appwrite";
 import type { User, UserRole } from "@shared/schema";
@@ -27,11 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function signIn(email: string, password: string) {
+  const signIn = useCallback(async (email: string, password: string) => {
     await account.createEmailPasswordSession(email, password);
-  }
+  }, []);
 
-  async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre", profession?: string) {
+  const signUp = useCallback(async (email: string, password: string, displayName: string, role: UserRole = "membre", profession?: string) => {
     try {
       // Créer le compte utilisateur
       const user = await account.create(ID.unique(), email, password, displayName);
@@ -76,9 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Erreur d'inscription:", error?.message || error);
       throw new Error(error?.message || error?.type || "Erreur lors de l'inscription");
     }
-  }
+  }, []);
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     try {
       await account.deleteSession('current');
     } catch (error) {
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(null);
       window.location.href = '/login';
     }
-  }
+  }, []);
 
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
@@ -129,14 +129,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     currentUser,
     userProfile,
     loading,
     signIn,
     signUp,
     signOut,
-  };
+  }), [currentUser, userProfile, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
