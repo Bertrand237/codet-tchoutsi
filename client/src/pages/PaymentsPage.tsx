@@ -23,6 +23,7 @@ export default function PaymentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     montant: "",
+    date: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
     mode: "mobile_money" as PaymentMode,
     commentaire: "",
   });
@@ -48,7 +49,7 @@ export default function PaymentsPage() {
         membreId: doc.userId,
         membreNom: doc.userName || "Inconnu",
         montant: doc.amount || 0,
-        date: toDate(doc.createdAt) || new Date(),
+        date: toDate(doc.paymentDate || doc.createdAt) || new Date(),
         mode: doc.paymentType || "autre",
         preuveURL: doc.proofUrl,
         statut: doc.status || "en_attente",
@@ -90,6 +91,7 @@ export default function PaymentsPage() {
         userId: userProfile.id,
         userName: userProfile.displayName,
         amount: parseFloat(formData.montant),
+        paymentDate: new Date(formData.date).toISOString(),
         paymentType: formData.mode,
         description: formData.commentaire,
         proofUrl: preuveURL,
@@ -105,7 +107,7 @@ export default function PaymentsPage() {
       });
 
       setDialogOpen(false);
-      setFormData({ montant: "", mode: "mobile_money", commentaire: "" });
+      setFormData({ montant: "", date: new Date().toISOString().split('T')[0], mode: "mobile_money", commentaire: "" });
       setProofFile(null);
       fetchPayments();
     } catch (error) {
@@ -266,6 +268,19 @@ export default function PaymentsPage() {
                   onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
                   required
                   data-testid="input-montant"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date">Date du paiement</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                  data-testid="input-date"
                   className="h-12"
                 />
               </div>
