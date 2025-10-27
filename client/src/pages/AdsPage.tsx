@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Video, Upload, Trash2, Play, Pause, Pencil } from "lucide-react";
+import { Plus, Video, Upload, Trash2, Play, Pause, Pencil, Download } from "lucide-react";
 import type { Advertisement } from "@shared/schema";
 import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytesResumable, orderBy } from '@/lib/firebase-compat';
 
@@ -168,6 +168,38 @@ export default function AdsPage() {
         variant: "destructive",
         title: "Erreur",
         description: "Impossible de mettre à jour le statut",
+      });
+    }
+  }
+
+  async function downloadVideo(videoUrl: string, title: string) {
+    try {
+      toast({
+        title: "Téléchargement en cours...",
+        description: "Le téléchargement de la vidéo va commencer",
+      });
+
+      const response = await fetch(videoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${title.replace(/[^a-z0-9]/gi, '_')}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Téléchargement réussi",
+        description: "La vidéo a été téléchargée",
+      });
+    } catch (error) {
+      console.error("Error downloading video:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de télécharger la vidéo",
       });
     }
   }
@@ -396,36 +428,47 @@ export default function AdsPage() {
                   </video>
                 </div>
 
-                {canManageAds && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleAdStatus(ad.id, ad.isActive)}
-                      data-testid={`button-toggle-status-${ad.id}`}
-                    >
-                      {ad.isActive ? "Désactiver" : "Activer"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditAd(ad)}
-                      data-testid={`button-edit-ad-${ad.id}`}
-                    >
-                      <Pencil className="h-4 w-4 mr-1" />
-                      Modifier
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setDeletingAdId(ad.id)}
-                      data-testid={`button-delete-ad-${ad.id}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Supprimer
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadVideo(ad.videoUrl, ad.title)}
+                    data-testid={`button-download-ad-${ad.id}`}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Télécharger
+                  </Button>
+                  {canManageAds && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleAdStatus(ad.id, ad.isActive)}
+                        data-testid={`button-toggle-status-${ad.id}`}
+                      >
+                        {ad.isActive ? "Désactiver" : "Activer"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditAd(ad)}
+                        data-testid={`button-edit-ad-${ad.id}`}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeletingAdId(ad.id)}
+                        data-testid={`button-delete-ad-${ad.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Supprimer
+                      </Button>
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))
