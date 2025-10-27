@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [profession, setProfession] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -44,7 +45,7 @@ export default function RegisterPage() {
 
     try {
       // Tout le monde est "membre" par défaut (sauf le premier qui devient admin automatiquement)
-      await signUp(email, password, displayName, "membre");
+      await signUp(email, password, displayName, "membre", profession);
       toast({
         title: "Bienvenue !",
         description: "Votre compte a été créé avec succès",
@@ -91,6 +92,19 @@ export default function RegisterPage() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                   data-testid="input-displayname"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profession">Profession</Label>
+                <Input
+                  id="profession"
+                  type="text"
+                  placeholder="Ingénieur, Médecin, Étudiant..."
+                  value={profession}
+                  onChange={(e) => setProfession(e.target.value)}
+                  data-testid="input-profession"
                   className="h-12"
                 />
               </div>

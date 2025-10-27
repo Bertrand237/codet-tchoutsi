@@ -8,7 +8,7 @@ interface AuthContextType {
   userProfile: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string, role?: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, role?: UserRole, profession?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await account.createEmailPasswordSession(email, password);
   }
 
-  async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre") {
+  async function signUp(email: string, password: string, displayName: string, role: UserRole = "membre", profession?: string) {
     try {
       // Créer le compte utilisateur
       const user = await account.create(ID.unique(), email, password, displayName);
@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         displayName,
         role: finalRole,
+        ...(profession && { profession }),
         createdAt: new Date().toISOString(),
       };
 
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: userDoc.email,
         displayName: userDoc.displayName,
         role: userDoc.role,
+        profession: userDoc.profession,
         photoURL: userDoc.photoURL,
         phoneNumber: userDoc.phoneNumber,
         createdAt: new Date(userDoc.createdAt),
@@ -103,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: userDoc.email,
             displayName: userDoc.displayName,
             role: userDoc.role,
+            profession: userDoc.profession,
             photoURL: userDoc.photoURL,
             phoneNumber: userDoc.phoneNumber,
             createdAt: new Date(userDoc.createdAt),

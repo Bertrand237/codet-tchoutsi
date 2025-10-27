@@ -10,6 +10,7 @@ export const userSchema = z.object({
   email: z.string().email(),
   displayName: z.string(),
   role: z.enum(userRoles),
+  profession: z.string().optional(),
   photoURL: z.string().optional(),
   phoneNumber: z.string().optional(),
   createdAt: z.date(),
