@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // User roles
-export const userRoles = ["admin", "président", "trésorier", "commissaire", "membre", "visiteur"] as const;
+export const userRoles = ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"] as const;
 export type UserRole = typeof userRoles[number];
 
 // User schema

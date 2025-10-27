@@ -31,7 +31,7 @@ export default function BlogPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
-  const canManageBlog = userProfile && (userProfile.role === "admin" || userProfile.role === "président");
+  const canManageBlog = userProfile && (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire" || userProfile.role === "celcom");
 
   useEffect(() => {
     fetchPosts();

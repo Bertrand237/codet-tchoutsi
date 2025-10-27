@@ -171,7 +171,7 @@ export default function PaymentsPage() {
     }
   }
 
-  const canDelete = userProfile && (userProfile.role === "admin" || userProfile.role === "trésorier" || userProfile.role === "commissaire");
+  const canDelete = userProfile && (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire" || userProfile.role === "trésorier" || userProfile.role === "commissaire");
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -199,7 +199,7 @@ export default function PaymentsPage() {
     }
   };
 
-  const canValidate = userProfile?.role === "commissaire" || userProfile?.role === "admin";
+  const canValidate = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire" || userProfile?.role === "commissaire";
 
   if (loading) {
     return (

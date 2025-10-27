@@ -122,8 +122,10 @@ export default function ProfilePage() {
   const roleColors: Record<string, string> = {
     admin: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300",
     président: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300",
+    secretaire: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300",
     trésorier: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300",
     commissaire: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300",
+    celcom: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300",
     membre: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300",
     visiteur: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300",
   };
@@ -309,6 +311,18 @@ export default function ProfilePage() {
                 </ul>
               </div>
             )}
+            {userProfile.role === "secretaire" && (
+              <div className="space-y-2">
+                <p className="font-medium text-primary">Secrétaire Général</p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Mêmes privilèges que le président</li>
+                  <li>Validation des paiements</li>
+                  <li>Gestion du blog et des publicités</li>
+                  <li>Création et gestion des projets</li>
+                  <li>Création de sondages</li>
+                </ul>
+              </div>
+            )}
             {userProfile.role === "trésorier" && (
               <div className="space-y-2">
                 <p className="font-medium text-primary">Trésorier</p>
@@ -316,6 +330,17 @@ export default function ProfilePage() {
                   <li>Validation des paiements</li>
                   <li>Gestion du budget et des transactions</li>
                   <li>Consultation des rapports financiers</li>
+                </ul>
+              </div>
+            )}
+            {userProfile.role === "celcom" && (
+              <div className="space-y-2">
+                <p className="font-medium text-primary">Chargé de Communication</p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Gestion complète du blog</li>
+                  <li>Gestion des publicités et vidéos</li>
+                  <li>Publication et modification d'articles</li>
+                  <li>Gestion du contenu de communication</li>
                 </ul>
               </div>
             )}

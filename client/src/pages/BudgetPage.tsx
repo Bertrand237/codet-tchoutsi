@@ -33,7 +33,7 @@ export default function BudgetPage() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  const canManageBudget = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "trésorier";
+  const canManageBudget = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire" || userProfile?.role === "trésorier";
 
   useEffect(() => {
     fetchTransactions();

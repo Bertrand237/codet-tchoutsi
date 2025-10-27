@@ -29,7 +29,7 @@ export default function VotesPage() {
     options: ["", ""],
   });
 
-  const canManagePolls = userProfile?.role === "admin" || userProfile?.role === "président";
+  const canManagePolls = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire";
 
   useEffect(() => {
     fetchPolls();

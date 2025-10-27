@@ -16,7 +16,7 @@ import { addDoc, db, deleteDoc, doc, getDocs, getDownloadURL, query, ref, storag
 export default function AdsPage() {
   const { userProfile } = useAuth();
   const { toast } = useToast();
-  const canManageAds = userProfile && (userProfile.role === "admin" || userProfile.role === "président");
+  const canManageAds = userProfile && (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire" || userProfile.role === "celcom");
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);

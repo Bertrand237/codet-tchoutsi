@@ -26,7 +26,7 @@ export default function MembersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  const canManageMembers = userProfile?.role === "admin" || userProfile?.role === "président";
+  const canManageMembers = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire";
 
   useEffect(() => {
     fetchMembers();

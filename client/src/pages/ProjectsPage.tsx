@@ -35,7 +35,7 @@ export default function ProjectsPage() {
     progression: "0",
   });
 
-  const canManageProjects = userProfile?.role === "admin" || userProfile?.role === "président";
+  const canManageProjects = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire";
 
   useEffect(() => {
     fetchProjects();

@@ -41,7 +41,7 @@ export default function CalendarPage() {
     lieu: "",
   });
 
-  const canManageEvents = userProfile?.role === "admin" || userProfile?.role === "président";
+  const canManageEvents = userProfile?.role === "admin" || userProfile?.role === "président" || userProfile?.role === "secretaire";
 
   useEffect(() => {
     fetchEvents();
