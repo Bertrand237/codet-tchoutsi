@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Newspaper, Upload, Calendar, Pencil, Trash2 } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
 import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy, where, deleteDoc } from '@/lib/firebase-compat';
+import AdsCarousel from "@/components/AdsCarousel";
 
 export default function BlogPage() {
   const { userProfile } = useAuth();
@@ -250,6 +251,9 @@ export default function BlogPage() {
 
   return (
     <div className="space-y-6">
+      {/* Carrousel de publicités vidéo visible par tous (y compris visiteurs) */}
+      <AdsCarousel />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Blog CODET</h1>
