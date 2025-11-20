@@ -88,7 +88,6 @@ export default function ChatPage() {
         userId: userProfile.id,
         userName: userProfile.displayName,
         text: messageInput.trim(),
-        messageType: "text",
         timestamp: new Date().toISOString(),
       });
 
@@ -647,12 +646,14 @@ export default function ChatPage() {
             </Button>
 
             {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 right-0 z-50">
-                <EmojiPicker
-                  onEmojiClick={handleEmojiClick}
-                  width={300}
-                  height={350}
-                />
+              <div className="fixed sm:absolute bottom-16 sm:bottom-full left-0 sm:left-auto right-0 sm:right-0 mb-0 sm:mb-2 z-50 flex justify-center sm:justify-end px-2 sm:px-0">
+                <div className="w-full sm:w-auto max-w-sm sm:max-w-none">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    width="100%"
+                    height={350}
+                  />
+                </div>
               </div>
             )}
           </div>
