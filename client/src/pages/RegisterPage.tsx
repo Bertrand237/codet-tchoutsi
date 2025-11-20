@@ -5,15 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import type { Gender } from "@shared/schema";
 
 export default function RegisterPage() {
+  const [gender, setGender] = useState<Gender | "">("");
+  const [displayName, setDisplayName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
+  const [sousComite, setSousComite] = useState("");
+  const [pays, setPays] = useState("");
+  const [ville, setVille] = useState("");
+  const [profession, setProfession] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [profession, setProfession] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -22,6 +29,24 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!gender) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner votre civilité",
+      });
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le numéro de téléphone est obligatoire",
+      });
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast({
@@ -45,7 +70,17 @@ export default function RegisterPage() {
 
     try {
       // Tout le monde est "membre" par défaut (sauf le premier qui devient admin automatiquement)
-      await signUp(email, password, displayName, "membre", profession);
+      await signUp({
+        email: email.trim() || undefined,
+        password,
+        displayName: displayName.trim(),
+        gender: gender as Gender,
+        phoneNumber: phoneNumber.trim(),
+        sousComite: sousComite.trim() || undefined,
+        pays: pays.trim() || undefined,
+        ville: ville.trim() || undefined,
+        profession: profession.trim() || undefined,
+      });
       toast({
         title: "Bienvenue !",
         description: "Votre compte a été créé avec succès",
@@ -83,7 +118,20 @@ export default function RegisterPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName">Nom complet</Label>
+                <Label htmlFor="gender">Civilité *</Label>
+                <Select value={gender} onValueChange={(value) => setGender(value as Gender)}>
+                  <SelectTrigger id="gender" data-testid="select-gender">
+                    <SelectValue placeholder="Sélectionnez votre civilité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monsieur">Monsieur</SelectItem>
+                    <SelectItem value="madame">Madame</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Nom complet *</Label>
                 <Input
                   id="displayName"
                   type="text"
@@ -92,7 +140,67 @@ export default function RegisterPage() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
                   data-testid="input-displayname"
-                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Numéro de téléphone *</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="+237 6 XX XX XX XX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                  data-testid="input-phonenumber"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Adresse email (optionnel)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="exemple@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  data-testid="input-email"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sousComite">Sous-comité d'origine</Label>
+                <Input
+                  id="sousComite"
+                  type="text"
+                  placeholder="Nom du sous-comité"
+                  value={sousComite}
+                  onChange={(e) => setSousComite(e.target.value)}
+                  data-testid="input-souscomite"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pays">Pays de résidence</Label>
+                <Input
+                  id="pays"
+                  type="text"
+                  placeholder="Cameroun"
+                  value={pays}
+                  onChange={(e) => setPays(e.target.value)}
+                  data-testid="input-pays"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ville">Ville de résidence</Label>
+                <Input
+                  id="ville"
+                  type="text"
+                  placeholder="Douala"
+                  value={ville}
+                  onChange={(e) => setVille(e.target.value)}
+                  data-testid="input-ville"
                 />
               </div>
 
@@ -105,26 +213,11 @@ export default function RegisterPage() {
                   value={profession}
                   onChange={(e) => setProfession(e.target.value)}
                   data-testid="input-profession"
-                  className="h-12"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="exemple@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-email"
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">Mot de passe *</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -134,13 +227,13 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     data-testid="input-password"
-                    className="h-12 pr-12"
+                    className="pr-12"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1 h-10 w-10"
+                    className="absolute right-1 top-1 h-8 w-8"
                     onClick={() => setShowPassword(!showPassword)}
                     data-testid="button-toggle-password"
                   >
@@ -150,7 +243,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
                 <Input
                   id="confirmPassword"
                   type={showPassword ? "text" : "password"}
@@ -159,13 +252,12 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   data-testid="input-confirm-password"
-                  className="h-12"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12"
+                className="w-full"
                 disabled={loading}
                 data-testid="button-register"
               >

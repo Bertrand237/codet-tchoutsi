@@ -41,6 +41,8 @@ export const STORAGE_FOLDERS = {
   BLOG_IMAGES: 'blog/',
   ADS_VIDEOS: 'ads/',
   PROFILE_PICTURES: 'profiles/',
+  PROJECT_DOCUMENTS: 'projects/documents/',
+  PROJECT_IMAGES: 'projects/images/',
 };
 
 export { client };

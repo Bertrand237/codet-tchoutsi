@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { generatePhoneAlias } from "@/lib/phoneUtils";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,13 +23,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      // Déterminer si c'est un email ou un numéro de téléphone
+      const isEmail = emailOrPhone.includes('@');
+      const loginEmail = isEmail ? emailOrPhone : generatePhoneAlias(emailOrPhone);
+      
+      await signIn(loginEmail, password);
       setLocation("/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        description: error.message || "Identifiants incorrects",
       });
     } finally {
       setLoading(false);
@@ -50,22 +55,21 @@ export default function LoginPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
             <CardDescription>
-              Connectez-vous à votre compte pour accéder à l'application
+              Connectez-vous avec votre email ou numéro de téléphone
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
+                <Label htmlFor="emailOrPhone">Email ou numéro de téléphone</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="exemple@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="emailOrPhone"
+                  type="text"
+                  placeholder="exemple@email.com ou +237 6XX XX XX XX"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
                   required
-                  data-testid="input-email"
-                  className="h-12"
+                  data-testid="input-email-phone"
                 />
               </div>
 
@@ -80,13 +84,13 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     data-testid="input-password"
-                    className="h-12 pr-12"
+                    className="pr-12"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1 h-10 w-10"
+                    className="absolute right-1 top-1 h-8 w-8"
                     onClick={() => setShowPassword(!showPassword)}
                     data-testid="button-toggle-password"
                   >
@@ -97,7 +101,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12"
+                className="w-full"
                 disabled={loading}
                 data-testid="button-login"
               >

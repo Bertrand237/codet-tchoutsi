@@ -106,49 +106,49 @@ function AuthenticatedRouter() {
               </Route>
 
               <Route path="/projects">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "responsable_communication", "membre"]}>
                   <ProjectsPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/members">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire"]}>
                   <MembersPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/budget">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier"]}>
                   <BudgetPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/calendar">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "responsable_communication", "membre"]}>
                   <CalendarPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/votes">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"]}>
                   <VotesPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/payments">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"]}>
                   <PaymentsPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/census">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"]}>
                   <CensusPage />
                 </ProtectedRoute>
               </Route>
 
               <Route path="/chat">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier", "commissaire", "membre"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "celcom", "responsable_communication", "membre"]}>
                   <ChatPage />
                 </ProtectedRoute>
               </Route>
@@ -156,7 +156,7 @@ function AuthenticatedRouter() {
               <Route path="/blog" component={BlogPage} />
 
               <Route path="/ads">
-                <ProtectedRoute allowedRoles={["admin", "président"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "celcom", "responsable_communication"]}>
                   <AdsPage />
                 </ProtectedRoute>
               </Route>
@@ -168,7 +168,7 @@ function AuthenticatedRouter() {
               </Route>
 
               <Route path="/statistics">
-                <ProtectedRoute allowedRoles={["admin", "président", "trésorier"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "secretaire_general", "trésorier"]}>
                   <DashboardPage />
                 </ProtectedRoute>
               </Route>
