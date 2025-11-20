@@ -85,6 +85,10 @@ export default function AdsCarousel() {
                   <video
                     src={ad.videoUrl}
                     controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
                     className="w-full h-full object-contain"
                     data-testid={`video-ad-${ad.id}`}
                   >

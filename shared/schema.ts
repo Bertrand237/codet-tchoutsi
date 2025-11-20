@@ -82,11 +82,17 @@ export const insertFamilySchema = familySchema.omit({ id: true, createdAt: true,
 export type InsertFamily = z.infer<typeof insertFamilySchema>;
 
 // Message schema (chat)
+export const messageTypes = ["text", "image", "audio"] as const;
+export type MessageType = typeof messageTypes[number];
+
 export const messageSchema = z.object({
   id: z.string(),
   userId: z.string(),
   userName: z.string(),
   text: z.string(),
+  messageType: z.enum(messageTypes).default("text"),
+  imageUrl: z.string().optional(),
+  audioUrl: z.string().optional(),
   timestamp: z.date(),
 });
 

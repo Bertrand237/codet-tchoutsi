@@ -8,9 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Send, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { Send, MessageSquare, Pencil, Trash2, Image as ImageIcon, Mic, MicOff, Smile } from "lucide-react";
 import type { Message } from "@shared/schema";
 import { Timestamp, addDoc, limit, onSnapshot, query, orderBy, serverTimestamp, toDate, updateDoc, deleteDoc } from '@/lib/firebase-compat';
+import { uploadFile, getFileUrl } from '@/lib/firebase-compat';
+import EmojiPicker from 'emoji-picker-react';
+import { Progress } from "@/components/ui/progress";
 
 export default function ChatPage() {
   const { userProfile } = useAuth();
@@ -23,6 +26,19 @@ export default function ChatPage() {
   const [editText, setEditText] = useState("");
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+
+  // Media states
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortedRef = useRef(false);
+  const uploadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentUploadPromiseRef = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
     const messagesRef = "messages";
@@ -46,7 +62,10 @@ export default function ChatPage() {
             id: doc.$id,
             userId: data.userId || data.senderId,
             userName: data.userName || data.senderName,
-            text: data.text || data.content,
+            text: data.text || data.content || "",
+            messageType: data.messageType || "text",
+            imageUrl: data.imageUrl,
+            audioUrl: data.audioUrl,
             timestamp,
           };
         })
@@ -73,10 +92,12 @@ export default function ChatPage() {
         userId: userProfile.id,
         userName: userProfile.displayName,
         text: messageInput.trim(),
+        messageType: "text",
         timestamp: new Date().toISOString(),
       });
 
       setMessageInput("");
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -87,6 +108,374 @@ export default function ChatPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function cancelUpload() {
+    // Set abort flag first
+    uploadAbortedRef.current = true;
+    
+    // Clean up intervals and timeouts
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (uploadTimeoutRef.current) {
+      clearTimeout(uploadTimeoutRef.current);
+      uploadTimeoutRef.current = null;
+    }
+    
+    // Reset UI immediately for user feedback
+    setUploading(false);
+    setUploadProgress(0);
+    
+    toast({
+      title: "Upload annulé",
+      description: "Nettoyage en cours...",
+    });
+
+    // Wait for upload to finish and clean up the file
+    if (currentUploadPromiseRef.current) {
+      try {
+        const fileId = await currentUploadPromiseRef.current;
+        // Delete the uploaded file
+        const { deleteObject } = await import('@/lib/firebase-compat');
+        const { STORAGE_BUCKET_ID } = await import('@/lib/appwrite');
+        await deleteObject({ bucket: STORAGE_BUCKET_ID || 'payment-proofs', fileId });
+      } catch (err) {
+        console.error("Failed to delete cancelled upload:", err);
+        toast({
+          variant: "destructive",
+          title: "Avertissement",
+          description: "Le fichier n'a pas pu être supprimé",
+        });
+      } finally {
+        currentUploadPromiseRef.current = null;
+      }
+    }
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !userProfile) return;
+
+    // Validate image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner une image",
+      });
+      return;
+    }
+
+    // Validate size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "L'image ne doit pas dépasser 5 Mo",
+      });
+      return;
+    }
+
+    // Reset abort flag
+    uploadAbortedRef.current = false;
+    setUploading(true);
+    setUploadProgress(0);
+
+    // Set 30 second timeout
+    uploadTimeoutRef.current = setTimeout(() => {
+      if (!uploadAbortedRef.current) {
+        uploadAbortedRef.current = true;
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        setUploading(false);
+        setUploadProgress(0);
+        toast({
+          variant: "destructive",
+          title: "Timeout",
+          description: "L'upload a pris trop de temps. Veuillez réessayer.",
+        });
+      }
+    }, 30000);
+
+    try {
+      const uploadTask = uploadFile(`messages/${Date.now()}_${file.name}`, file);
+      currentUploadPromiseRef.current = uploadTask;
+      
+      // Simulate progress using ref-based check
+      progressIntervalRef.current = setInterval(() => {
+        if (uploadAbortedRef.current) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+          }
+          return;
+        }
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = null;
+            }
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const fileId = await uploadTask;
+      
+      // Check if aborted after upload - this is handled by cancelUpload
+      if (uploadAbortedRef.current) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        if (uploadTimeoutRef.current) {
+          clearTimeout(uploadTimeoutRef.current);
+          uploadTimeoutRef.current = null;
+        }
+        // File deletion is handled by cancelUpload function which awaits the promise
+        return;
+      }
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+      setUploadProgress(100);
+
+      const imageUrl = await getFileUrl(fileId);
+
+      // Final check before sending message
+      if (uploadAbortedRef.current) {
+        return;
+      }
+
+      // Send message with image
+      await addDoc("messages", {
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        text: messageInput.trim() || "Photo",
+        messageType: "image",
+        imageUrl,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessageInput("");
+      toast({
+        title: "Photo envoyée",
+        description: "Votre photo a été envoyée avec succès",
+      });
+    } catch (error) {
+      if (uploadAbortedRef.current) {
+        return;
+      }
+      console.error("Error uploading image:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer la photo",
+      });
+    } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+      setUploading(false);
+      setUploadProgress(0);
+      // Only reset abort flag if not aborted (to maintain state for cleanup)
+      if (!uploadAbortedRef.current) {
+        uploadAbortedRef.current = false;
+      }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+        await sendAudioMessage(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+      setAudioChunks([]);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'accéder au microphone",
+      });
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  }
+
+  async function sendAudioMessage(audioBlob: Blob) {
+    if (!userProfile) return;
+
+    // Reset abort flag
+    uploadAbortedRef.current = false;
+    setUploading(true);
+    setUploadProgress(0);
+
+    // Set 30 second timeout
+    uploadTimeoutRef.current = setTimeout(() => {
+      if (!uploadAbortedRef.current) {
+        uploadAbortedRef.current = true;
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        setUploading(false);
+        setUploadProgress(0);
+        toast({
+          variant: "destructive",
+          title: "Timeout",
+          description: "L'upload a pris trop de temps. Veuillez réessayer.",
+        });
+      }
+    }, 30000);
+
+    try {
+      const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+      
+      const uploadTask = uploadFile(`messages/${audioFile.name}`, audioFile);
+      currentUploadPromiseRef.current = uploadTask;
+      
+      // Simulate progress using ref-based check
+      progressIntervalRef.current = setInterval(() => {
+        if (uploadAbortedRef.current) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+          }
+          return;
+        }
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = null;
+            }
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const fileId = await uploadTask;
+      
+      // Check if aborted after upload - this is handled by cancelUpload
+      if (uploadAbortedRef.current) {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        if (uploadTimeoutRef.current) {
+          clearTimeout(uploadTimeoutRef.current);
+          uploadTimeoutRef.current = null;
+        }
+        // File deletion is handled by cancelUpload function which awaits the promise
+        return;
+      }
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+      setUploadProgress(100);
+
+      const audioUrl = await getFileUrl(fileId);
+
+      // Final check before sending message
+      if (uploadAbortedRef.current) {
+        return;
+      }
+
+      // Send message with audio
+      await addDoc("messages", {
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        text: messageInput.trim() || "Message vocal",
+        messageType: "audio",
+        audioUrl,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessageInput("");
+      toast({
+        title: "Message vocal envoyé",
+        description: "Votre message vocal a été envoyé avec succès",
+      });
+    } catch (error) {
+      if (uploadAbortedRef.current) {
+        return;
+      }
+      console.error("Error uploading audio:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer le message vocal",
+      });
+    } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+      setUploading(false);
+      setUploadProgress(0);
+      // Only reset abort flag if not aborted (to maintain state for cleanup)
+      if (!uploadAbortedRef.current) {
+        uploadAbortedRef.current = false;
+      }
+    }
+  }
+
+  function handleEmojiClick(emojiData: any) {
+    setMessageInput((prev) => prev + emojiData.emoji);
   }
 
   function handleEditMessage(message: Message) {
@@ -149,29 +538,42 @@ export default function ChatPage() {
 
   function canEditOrDelete(message: Message): boolean {
     if (!userProfile) return false;
-    return message.userId === userProfile.id || userProfile.role === "admin";
+    
+    // Admins and présidents can edit/delete any message
+    if (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire_general") {
+      return true;
+    }
+    
+    // Users can only edit/delete their own messages within 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return message.userId === userProfile.id && message.timestamp > fiveMinutesAgo;
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-6">
+          <p>Vous devez être connecté pour accéder au chat</p>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-foreground">Messagerie CODET</h1>
-        <p className="text-muted-foreground">Groupe de discussion du comité</p>
-      </div>
-
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="border-b">
+    <div className="h-full flex flex-col p-6">
+      <Card className="flex-1 flex flex-col h-full">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            Groupe CODET
-            <span className="text-sm font-normal text-muted-foreground">
-              ({messages.length} messages)
-            </span>
+            <MessageSquare className="h-5 w-5" />
+            Messagerie du Comité
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Discussion en temps réel avec tous les membres
+          </p>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <ScrollArea className="h-full p-6">
+        <CardContent className="flex-1 p-0 flex flex-col min-h-0">
+          <ScrollArea className="flex-1 px-4">
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -221,9 +623,31 @@ export default function ChatPage() {
                                 : "bg-muted"
                             }`}
                           >
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {message.text}
-                            </p>
+                            {message.messageType === "image" && message.imageUrl && (
+                              <img
+                                src={message.imageUrl}
+                                alt="Image"
+                                className="max-w-full max-h-64 rounded-md mb-2 object-contain"
+                                data-testid={`image-${message.id}`}
+                              />
+                            )}
+                            
+                            {message.messageType === "audio" && message.audioUrl && (
+                              <audio
+                                controls
+                                src={message.audioUrl}
+                                className="max-w-full mb-2"
+                                data-testid={`audio-${message.id}`}
+                              >
+                                Votre navigateur ne supporte pas l'audio.
+                              </audio>
+                            )}
+                            
+                            {message.text && (
+                              <p className="text-sm whitespace-pre-wrap break-words">
+                                {message.text}
+                              </p>
+                            )}
                           </div>
                           
                           {canEdit && (
@@ -260,22 +684,116 @@ export default function ChatPage() {
         </CardContent>
 
         <div className="border-t p-4">
+          {/* Upload Progress */}
+          {uploading && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {uploadProgress < 100 ? "Téléchargement..." : "Envoi..."}
+                  </span>
+                  <span className="text-sm font-medium">{uploadProgress}%</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={cancelUpload}
+                  className="h-6"
+                  data-testid="button-cancel-upload"
+                >
+                  Annuler
+                </Button>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
+
+          {/* Recording Indicator */}
+          {recording && (
+            <div className="mb-3 flex items-center gap-2 text-destructive animate-pulse">
+              <MicOff className="h-4 w-4" />
+              <span className="text-sm font-medium">Enregistrement en cours...</span>
+            </div>
+          )}
+
           <form onSubmit={handleSendMessage} className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              data-testid="input-image-upload"
+            />
+
+            {/* Image Upload Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 flex-shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || recording || sending}
+              data-testid="button-upload-image"
+            >
+              <ImageIcon className="h-5 w-5" />
+            </Button>
+
+            {/* Voice Recording Button */}
+            <Button
+              type="button"
+              variant={recording ? "destructive" : "outline"}
+              size="icon"
+              className="h-12 w-12 flex-shrink-0"
+              onClick={recording ? stopRecording : startRecording}
+              disabled={uploading || sending}
+              data-testid="button-voice-record"
+            >
+              {recording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+
+            {/* Emoji Picker Button */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 flex-shrink-0"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                disabled={uploading || recording || sending}
+                data-testid="button-emoji-picker"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+
+              {showEmojiPicker && (
+                <div className="absolute bottom-full mb-2 right-0 z-50">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    width={320}
+                    height={400}
+                  />
+                </div>
+              )}
+            </div>
+
             <Input
               type="text"
               placeholder="Écrire un message..."
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              disabled={sending}
+              disabled={sending || uploading || recording}
               data-testid="input-message"
               className="flex-1 h-12"
             />
+            
             <Button
               type="submit"
-              disabled={sending || !messageInput.trim()}
+              disabled={sending || !messageInput.trim() || uploading || recording}
               data-testid="button-send-message"
               size="icon"
-              className="h-12 w-12"
+              className="h-12 w-12 flex-shrink-0"
             >
               <Send className="h-5 w-5" />
             </Button>
