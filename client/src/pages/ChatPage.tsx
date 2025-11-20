@@ -406,234 +406,244 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-6">
-      <Card className="flex-1 flex flex-col h-full">
-        <CardHeader className="flex-shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Messagerie du Comité
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Discussion en temps réel avec tous les membres
-          </p>
-        </CardHeader>
-
-        <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-                  <p>Aucun message pour le moment</p>
-                  <p className="text-sm">Soyez le premier à envoyer un message !</p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const isOwnMessage = message.userId === userProfile?.id;
-                  const canEdit = canEditOrDelete(message);
-                  
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex gap-3 group ${isOwnMessage ? "flex-row-reverse" : ""}`}
-                      data-testid={`message-${message.id}`}
-                    >
-                      <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {message.userName?.charAt(0).toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div
-                        className={`flex-1 max-w-[70%] ${
-                          isOwnMessage ? "items-end" : "items-start"
-                        } flex flex-col gap-1`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {isOwnMessage ? "Vous" : message.userName}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {message.timestamp.toLocaleTimeString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-
-                        <div className="relative">
-                          <div
-                            className={`p-3 rounded-lg ${
-                              isOwnMessage
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
-                          >
-                            {message.messageType === "image" && message.imageUrl && (
-                              <img
-                                src={message.imageUrl}
-                                alt="Image"
-                                className="max-w-full max-h-64 rounded-md mb-2 object-contain"
-                                data-testid={`image-${message.id}`}
-                              />
-                            )}
-                            
-                            {message.messageType === "audio" && message.audioUrl && (
-                              <audio
-                                controls
-                                src={message.audioUrl}
-                                className="max-w-full mb-2"
-                                data-testid={`audio-${message.id}`}
-                              >
-                                Votre navigateur ne supporte pas l'audio.
-                              </audio>
-                            )}
-                            
-                            {message.text && (
-                              <p className="text-sm whitespace-pre-wrap break-words">
-                                {message.text}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {canEdit && (
-                            <div className={`absolute top-0 ${isOwnMessage ? "left-0" : "right-0"} -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
-                              <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-6 w-6"
-                                onClick={() => handleEditMessage(message)}
-                                data-testid={`button-edit-message-${message.id}`}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="destructive"
-                                className="h-6 w-6"
-                                onClick={() => setDeletingMessageId(message.id)}
-                                data-testid={`button-delete-message-${message.id}`}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={scrollRef} />
-            </div>
-          </ScrollArea>
-        </CardContent>
-
-        <div className="border-t p-4">
-          {/* Upload Progress */}
-          {uploading && (
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-muted-foreground">
-                  {uploadProgress < 100 ? "Téléchargement..." : "Envoi..."}
-                </span>
-                <span className="text-sm font-medium">{uploadProgress}%</span>
-              </div>
-              <Progress value={uploadProgress} className="h-2" />
-            </div>
-          )}
-
-          {/* Recording Indicator */}
-          {recording && (
-            <div className="mb-3 flex items-center gap-2 text-destructive animate-pulse">
-              <MicOff className="h-4 w-4" />
-              <span className="text-sm font-medium">Enregistrement en cours...</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-              data-testid="input-image-upload"
-            />
-
-            {/* Image Upload Button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 flex-shrink-0"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || recording || sending}
-              data-testid="button-upload-image"
-            >
-              <ImageIcon className="h-5 w-5" />
-            </Button>
-
-            {/* Voice Recording Button */}
-            <Button
-              type="button"
-              variant={recording ? "destructive" : "outline"}
-              size="icon"
-              className="h-12 w-12 flex-shrink-0"
-              onClick={recording ? stopRecording : startRecording}
-              disabled={uploading || sending}
-              data-testid="button-voice-record"
-            >
-              {recording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </Button>
-
-            {/* Emoji Picker Button */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 flex-shrink-0"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                disabled={uploading || recording || sending}
-                data-testid="button-emoji-picker"
-              >
-                <Smile className="h-5 w-5" />
-              </Button>
-
-              {showEmojiPicker && (
-                <div className="absolute bottom-full mb-2 right-0 z-50">
-                  <EmojiPicker
-                    onEmojiClick={handleEmojiClick}
-                    width={320}
-                    height={400}
-                  />
-                </div>
-              )}
-            </div>
-
-            <Input
-              type="text"
-              placeholder="Écrire un message..."
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              disabled={sending || uploading || recording}
-              data-testid="input-message"
-              className="flex-1 h-12"
-            />
-            
-            <Button
-              type="submit"
-              disabled={sending || !messageInput.trim() || uploading || recording}
-              data-testid="button-send-message"
-              size="icon"
-              className="h-12 w-12 flex-shrink-0"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </form>
+    <div className="h-full flex flex-col bg-muted/30">
+      {/* WhatsApp-style Header - Fixed */}
+      <div className="flex-shrink-0 bg-primary text-primary-foreground p-3 sm:p-4 shadow-md">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-base sm:text-lg truncate">Messagerie CODET</h1>
+            <p className="text-xs sm:text-sm text-primary-foreground/80 truncate">
+              {messages.length} message{messages.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Messages Area - Scrollable */}
+      <ScrollArea className="flex-1 bg-muted/30">
+        <div className="p-3 sm:p-4 space-y-3">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <MessageSquare className="h-16 w-16 mb-4 opacity-30" />
+              <p className="text-sm font-medium">Aucun message</p>
+              <p className="text-xs">Soyez le premier à écrire !</p>
+            </div>
+          ) : (
+            messages.map((message) => {
+              const isOwnMessage = message.userId === userProfile?.id;
+              const canEdit = canEditOrDelete(message);
+              
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-2 items-end group ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                  data-testid={`message-${message.id}`}
+                >
+                  {!isOwnMessage && (
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {message.userName?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  <div className={`max-w-[75%] sm:max-w-[70%] ${isOwnMessage ? "items-end" : "items-start"} flex flex-col gap-0.5`}>
+                    {!isOwnMessage && (
+                      <span className="text-xs font-medium text-muted-foreground px-2">
+                        {message.userName}
+                      </span>
+                    )}
+
+                    <div className="relative group">
+                      <div
+                        className={`px-3 py-2 rounded-lg shadow-sm ${
+                          isOwnMessage
+                            ? "bg-[#DCF8C6] dark:bg-[#005C4B] rounded-tr-none"
+                            : "bg-white dark:bg-[#202C33] rounded-tl-none"
+                        }`}
+                      >
+                        {message.messageType === "image" && message.imageUrl && (
+                          <img
+                            src={message.imageUrl}
+                            alt="Image"
+                            className="max-w-full max-h-64 sm:max-h-80 rounded-md mb-1 object-contain"
+                            data-testid={`image-${message.id}`}
+                          />
+                        )}
+                        
+                        {message.messageType === "audio" && message.audioUrl && (
+                          <audio
+                            controls
+                            src={message.audioUrl}
+                            className="max-w-full mb-1"
+                            data-testid={`audio-${message.id}`}
+                          >
+                            Votre navigateur ne supporte pas l'audio.
+                          </audio>
+                        )}
+                        
+                        {message.text && (
+                          <p className={`text-sm whitespace-pre-wrap break-words ${
+                            isOwnMessage ? "text-gray-900 dark:text-gray-100" : ""
+                          }`}>
+                            {message.text}
+                          </p>
+                        )}
+                        
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 float-right ml-2 mt-1">
+                          {message.timestamp.toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      
+                      {canEdit && (
+                        <div className={`absolute -top-1 ${isOwnMessage ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full mr-1"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5`}>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => handleEditMessage(message)}
+                            data-testid={`button-edit-message-${message.id}`}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => setDeletingMessageId(message.id)}
+                            data-testid={`button-delete-message-${message.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isOwnMessage && (
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {userProfile?.displayName?.charAt(0).toUpperCase() || "V"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              );
+            })
+          )}
+          <div ref={scrollRef} />
+        </div>
+      </ScrollArea>
+
+      {/* Input Area - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-background border-t p-2 sm:p-3 shadow-lg">
+        {/* Upload Progress */}
+        {uploading && (
+          <div className="mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-muted-foreground">
+                {uploadProgress < 100 ? "Envoi..." : "Terminé"}
+              </span>
+              <span className="text-xs font-medium">{uploadProgress}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-1.5" />
+          </div>
+        )}
+
+        {/* Recording Indicator */}
+        {recording && (
+          <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse text-xs">
+            <MicOff className="h-3.5 w-3.5" />
+            <span className="font-medium">Enregistrement...</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 sm:gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+            data-testid="input-image-upload"
+          />
+
+          {/* Action Buttons */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || recording || sending}
+            data-testid="button-upload-image"
+          >
+            <ImageIcon className="h-5 w-5" />
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 ${
+              recording ? "text-destructive" : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={recording ? stopRecording : startRecording}
+            disabled={uploading || sending}
+            data-testid="button-voice-record"
+          >
+            {recording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </Button>
+
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              disabled={uploading || recording || sending}
+              data-testid="button-emoji-picker"
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+
+            {showEmojiPicker && (
+              <div className="absolute bottom-full mb-2 right-0 z-50">
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  width={300}
+                  height={350}
+                />
+              </div>
+            )}
+          </div>
+
+          <Input
+            type="text"
+            placeholder="Message..."
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            disabled={sending || uploading || recording}
+            data-testid="input-message"
+            className="flex-1 h-9 sm:h-10 rounded-full bg-muted border-none"
+          />
+          
+          <Button
+            type="submit"
+            disabled={sending || !messageInput.trim() || uploading || recording}
+            data-testid="button-send-message"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10 rounded-full flex-shrink-0"
+          >
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+        </form>
+      </div>
 
       <Dialog open={!!editingMessage} onOpenChange={(open) => {
         if (!open) {
