@@ -171,13 +171,11 @@ export default function ChatPage() {
 
       const imageUrl = await getFileUrl(fileId);
 
-      // Send message with image
+      // Send message with image (encode in text field)
       await addDoc("messages", {
         userId: userProfile.id,
         userName: userProfile.displayName,
-        text: messageInput.trim() || "Photo",
-        messageType: "image",
-        imageUrl,
+        text: `[IMAGE]${imageUrl}[/IMAGE]${messageInput.trim() || ""}`,
         timestamp: new Date().toISOString(),
       });
 
@@ -290,13 +288,11 @@ export default function ChatPage() {
 
       const audioUrl = await getFileUrl(fileId);
 
-      // Send message with audio
+      // Send message with audio (encode in text field)
       await addDoc("messages", {
         userId: userProfile.id,
         userName: userProfile.displayName,
-        text: messageInput.trim() || "Message vocal",
-        messageType: "audio",
-        audioUrl,
+        text: `[AUDIO]${audioUrl}[/AUDIO]${messageInput.trim() || ""}`,
         timestamp: new Date().toISOString(),
       });
 
@@ -322,6 +318,43 @@ export default function ChatPage() {
 
   function handleEmojiClick(emojiData: any) {
     setMessageInput((prev) => prev + emojiData.emoji);
+  }
+
+  // Parse message text to extract media URLs and plain text
+  // Supports both new encoded format and legacy message fields
+  function parseMessage(text: string, message?: Message) {
+    const imageMatch = text.match(/\[IMAGE\](.*?)\[\/IMAGE\]/);
+    const audioMatch = text.match(/\[AUDIO\](.*?)\[\/AUDIO\]/);
+    
+    let messageType: 'text' | 'image' | 'audio' = 'text';
+    let imageUrl: string | null = null;
+    let audioUrl: string | null = null;
+    let plainText = text;
+
+    // Check new encoded format first
+    if (imageMatch) {
+      messageType = 'image';
+      imageUrl = imageMatch[1];
+      plainText = text.replace(/\[IMAGE\].*?\[\/IMAGE\]/, '').trim();
+    } else if (audioMatch) {
+      messageType = 'audio';
+      audioUrl = audioMatch[1];
+      plainText = text.replace(/\[AUDIO\].*?\[\/AUDIO\]/, '').trim();
+    }
+    // Fall back to legacy fields if they exist
+    else if (message) {
+      if ((message as any).messageType === 'image' && (message as any).imageUrl) {
+        messageType = 'image';
+        imageUrl = (message as any).imageUrl;
+        plainText = text;
+      } else if ((message as any).messageType === 'audio' && (message as any).audioUrl) {
+        messageType = 'audio';
+        audioUrl = (message as any).audioUrl;
+        plainText = text;
+      }
+    }
+
+    return { messageType, imageUrl, audioUrl, plainText };
   }
 
   function handleEditMessage(message: Message) {
@@ -433,6 +466,7 @@ export default function ChatPage() {
             messages.map((message) => {
               const isOwnMessage = message.userId === userProfile?.id;
               const canEdit = canEditOrDelete(message);
+              const { messageType, imageUrl, audioUrl, plainText } = parseMessage(message.text, message);
               
               return (
                 <div
@@ -463,19 +497,19 @@ export default function ChatPage() {
                             : "bg-white dark:bg-[#202C33] rounded-tl-none"
                         }`}
                       >
-                        {message.messageType === "image" && message.imageUrl && (
+                        {messageType === "image" && imageUrl && (
                           <img
-                            src={message.imageUrl}
+                            src={imageUrl}
                             alt="Image"
                             className="max-w-full max-h-64 sm:max-h-80 rounded-md mb-1 object-contain"
                             data-testid={`image-${message.id}`}
                           />
                         )}
                         
-                        {message.messageType === "audio" && message.audioUrl && (
+                        {messageType === "audio" && audioUrl && (
                           <audio
                             controls
-                            src={message.audioUrl}
+                            src={audioUrl}
                             className="max-w-full mb-1"
                             data-testid={`audio-${message.id}`}
                           >
@@ -483,11 +517,11 @@ export default function ChatPage() {
                           </audio>
                         )}
                         
-                        {message.text && (
+                        {plainText && (
                           <p className={`text-sm whitespace-pre-wrap break-words ${
                             isOwnMessage ? "text-gray-900 dark:text-gray-100" : ""
                           }`}>
-                            {message.text}
+                            {plainText}
                           </p>
                         )}
                         
