@@ -190,3 +190,35 @@ Required secrets in Replit:
     - Updated ProfilePage to display role colors and privileges for both new roles
     - All role permission checks updated consistently across 9 pages
   - ✅ **Bug Fix**: Fixed missing président/secretaire in payment validation/deletion permissions
+
+- **Date**: 2025-11-20
+- **Schema Migration & User Fields Enhancement**:
+  - ✅ **Appwrite Schema Migration Completed**:
+    - Successfully migrated existing production database without data loss
+    - Created migration scripts with dotenv support for environment variables
+    - All new user fields added to existing `users` collection as **optional** to preserve existing user accounts
+    - All new project fields added to existing `projects` collection
+  - ✅ **New User Profile Fields**:
+    - Added `gender` (Enum: monsieur/madame) - First field in registration form
+    - Added `phoneNumber` (String, mandatory for new users)
+    - Made `email` optional (phone-only registration supported)
+    - Added `sousComite` (String, optional) - Sub-committee assignment
+    - Added `pays` (String, optional) - Country
+    - Added `ville` (String, optional) - City
+  - ✅ **Phone Number Authentication**:
+    - Created comprehensive phone normalization utility (`phoneUtils.ts`)
+    - Handles multiple formats: +237, 00237, 0XXX
+    - Generates alias emails (phoneNumber@codet.local) for Appwrite compatibility
+    - Consistent normalization across registration and login flows
+  - ✅ **New Project Fields**:
+    - Added `documentPDFUrl` (String) - For project PDF documents
+    - Added `preuveImages` (String Array) - For proof images
+  - ✅ **Role Updates**:
+    - Updated all role-based access controls with new roles (secretaire_general, responsable_communication)
+    - Updated sidebar menu visibility for all 8 roles
+    - Updated ProtectedRoute guards across 10+ routes in App.tsx
+  - ✅ **Migration Scripts**:
+    - Created `scripts/update-appwrite-schema.ts` - Main migration script
+    - Created `scripts/migrate-with-key.ts` - Migration with direct API key input
+    - Created `scripts/test-api-key.ts` - API key diagnostic tool
+    - Documented in `scripts/README.md` and `DEPLOIEMENT.md`
