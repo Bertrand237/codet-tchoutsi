@@ -369,8 +369,12 @@ export default function MembersPage() {
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="président">Président</SelectItem>
+                    <SelectItem value="secretaire">Secrétaire</SelectItem>
+                    <SelectItem value="secretaire_general">Secrétaire Général</SelectItem>
                     <SelectItem value="trésorier">Trésorier</SelectItem>
                     <SelectItem value="commissaire">Commissaire</SelectItem>
+                    <SelectItem value="celcom">Chargé de Communication (CELCOM)</SelectItem>
+                    <SelectItem value="responsable_communication">Responsable Communication</SelectItem>
                     <SelectItem value="membre">Membre</SelectItem>
                     <SelectItem value="visiteur">Visiteur</SelectItem>
                   </SelectContent>
