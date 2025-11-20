@@ -170,14 +170,18 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="sousComite">Sous-comité d'origine</Label>
-                <Input
-                  id="sousComite"
-                  type="text"
-                  placeholder="Nom du sous-comité"
-                  value={sousComite}
-                  onChange={(e) => setSousComite(e.target.value)}
-                  data-testid="input-souscomite"
-                />
+                <Select value={sousComite} onValueChange={setSousComite}>
+                  <SelectTrigger id="sousComite" data-testid="select-souscomite">
+                    <SelectValue placeholder="Sélectionnez votre sous-comité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SOUS-COMITÉ TOUOTSUET">SOUS-COMITÉ TOUOTSUET</SelectItem>
+                    <SelectItem value="SOUS-COMITÉ TSINTCHOU">SOUS-COMITÉ TSINTCHOU</SelectItem>
+                    <SelectItem value="SOUS-COMITÉ MEKOUH">SOUS-COMITÉ MEKOUH</SelectItem>
+                    <SelectItem value="SOUS-COMITÉ NZINTSUET">SOUS-COMITÉ NZINTSUET</SelectItem>
+                    <SelectItem value="SOUS-COMITÉ METSOOH">SOUS-COMITÉ METSOOH</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

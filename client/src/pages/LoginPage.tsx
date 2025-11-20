@@ -28,14 +28,15 @@ export default function LoginPage() {
       const loginEmail = isEmail ? emailOrPhone : generatePhoneAlias(emailOrPhone);
       
       await signIn(loginEmail, password);
-      setLocation("/dashboard");
+      
+      // Forcer un rechargement complet pour garantir que le contexte auth est à jour
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
         description: error.message || "Identifiants incorrects",
       });
-    } finally {
       setLoading(false);
     }
   };
