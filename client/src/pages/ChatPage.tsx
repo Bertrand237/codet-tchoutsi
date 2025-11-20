@@ -35,10 +35,6 @@ export default function ChatPage() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadAbortedRef = useRef(false);
-  const uploadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const currentUploadPromiseRef = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
     const messagesRef = "messages";
@@ -110,50 +106,6 @@ export default function ChatPage() {
     }
   }
 
-  async function cancelUpload() {
-    // Set abort flag first
-    uploadAbortedRef.current = true;
-    
-    // Clean up intervals and timeouts
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    if (uploadTimeoutRef.current) {
-      clearTimeout(uploadTimeoutRef.current);
-      uploadTimeoutRef.current = null;
-    }
-    
-    // Reset UI immediately for user feedback
-    setUploading(false);
-    setUploadProgress(0);
-    
-    toast({
-      title: "Upload annulé",
-      description: "Nettoyage en cours...",
-    });
-
-    // Wait for upload to finish and clean up the file
-    if (currentUploadPromiseRef.current) {
-      try {
-        const fileId = await currentUploadPromiseRef.current;
-        // Delete the uploaded file
-        const { deleteObject } = await import('@/lib/firebase-compat');
-        const { STORAGE_BUCKET_ID } = await import('@/lib/appwrite');
-        await deleteObject({ bucket: STORAGE_BUCKET_ID || 'payment-proofs', fileId });
-      } catch (err) {
-        console.error("Failed to delete cancelled upload:", err);
-        toast({
-          variant: "destructive",
-          title: "Avertissement",
-          description: "Le fichier n'a pas pu être supprimé",
-        });
-      } finally {
-        currentUploadPromiseRef.current = null;
-      }
-    }
-  }
-
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !userProfile) return;
@@ -178,86 +130,46 @@ export default function ChatPage() {
       return;
     }
 
-    // Reset abort flag
-    uploadAbortedRef.current = false;
     setUploading(true);
     setUploadProgress(0);
 
-    // Set 30 second timeout
-    uploadTimeoutRef.current = setTimeout(() => {
-      if (!uploadAbortedRef.current) {
-        uploadAbortedRef.current = true;
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-        setUploading(false);
-        setUploadProgress(0);
-        toast({
-          variant: "destructive",
-          title: "Timeout",
-          description: "L'upload a pris trop de temps. Veuillez réessayer.",
-        });
-      }
-    }, 30000);
+    // Declare intervals/timeouts at function scope for proper cleanup
+    let progressInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // Set 60 second timeout
+    timeoutId = setTimeout(() => {
+      if (progressInterval) clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      toast({
+        variant: "destructive",
+        title: "Timeout",
+        description: "L'upload a pris trop de temps. Veuillez réessayer.",
+      });
+    }, 60000);
 
     try {
       const uploadTask = uploadFile(`messages/${Date.now()}_${file.name}`, file);
-      currentUploadPromiseRef.current = uploadTask;
       
-      // Simulate progress using ref-based check
-      progressIntervalRef.current = setInterval(() => {
-        if (uploadAbortedRef.current) {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-            progressIntervalRef.current = null;
-          }
-          return;
-        }
+      // Simulate progress
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
-            if (progressIntervalRef.current) {
-              clearInterval(progressIntervalRef.current);
-              progressIntervalRef.current = null;
-            }
+            if (progressInterval) clearInterval(progressInterval);
             return 90;
           }
           return prev + 10;
         });
-      }, 200);
+      }, 300);
 
       const fileId = await uploadTask;
       
-      // Check if aborted after upload - this is handled by cancelUpload
-      if (uploadAbortedRef.current) {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-        if (uploadTimeoutRef.current) {
-          clearTimeout(uploadTimeoutRef.current);
-          uploadTimeoutRef.current = null;
-        }
-        // File deletion is handled by cancelUpload function which awaits the promise
-        return;
-      }
-
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      if (uploadTimeoutRef.current) {
-        clearTimeout(uploadTimeoutRef.current);
-        uploadTimeoutRef.current = null;
-      }
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
       setUploadProgress(100);
 
       const imageUrl = await getFileUrl(fileId);
-
-      // Final check before sending message
-      if (uploadAbortedRef.current) {
-        return;
-      }
 
       // Send message with image
       await addDoc("messages", {
@@ -275,9 +187,6 @@ export default function ChatPage() {
         description: "Votre photo a été envoyée avec succès",
       });
     } catch (error) {
-      if (uploadAbortedRef.current) {
-        return;
-      }
       console.error("Error uploading image:", error);
       toast({
         variant: "destructive",
@@ -285,20 +194,10 @@ export default function ChatPage() {
         description: "Impossible d'envoyer la photo",
       });
     } finally {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      if (uploadTimeoutRef.current) {
-        clearTimeout(uploadTimeoutRef.current);
-        uploadTimeoutRef.current = null;
-      }
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
       setUploading(false);
       setUploadProgress(0);
-      // Only reset abort flag if not aborted (to maintain state for cleanup)
-      if (!uploadAbortedRef.current) {
-        uploadAbortedRef.current = false;
-      }
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -348,88 +247,48 @@ export default function ChatPage() {
   async function sendAudioMessage(audioBlob: Blob) {
     if (!userProfile) return;
 
-    // Reset abort flag
-    uploadAbortedRef.current = false;
     setUploading(true);
     setUploadProgress(0);
 
-    // Set 30 second timeout
-    uploadTimeoutRef.current = setTimeout(() => {
-      if (!uploadAbortedRef.current) {
-        uploadAbortedRef.current = true;
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-        setUploading(false);
-        setUploadProgress(0);
-        toast({
-          variant: "destructive",
-          title: "Timeout",
-          description: "L'upload a pris trop de temps. Veuillez réessayer.",
-        });
-      }
-    }, 30000);
+    // Declare intervals/timeouts at function scope for proper cleanup
+    let progressInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // Set 60 second timeout
+    timeoutId = setTimeout(() => {
+      if (progressInterval) clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      toast({
+        variant: "destructive",
+        title: "Timeout",
+        description: "L'upload a pris trop de temps. Veuillez réessayer.",
+      });
+    }, 60000);
 
     try {
       const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
       
       const uploadTask = uploadFile(`messages/${audioFile.name}`, audioFile);
-      currentUploadPromiseRef.current = uploadTask;
       
-      // Simulate progress using ref-based check
-      progressIntervalRef.current = setInterval(() => {
-        if (uploadAbortedRef.current) {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-            progressIntervalRef.current = null;
-          }
-          return;
-        }
+      // Simulate progress
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
-            if (progressIntervalRef.current) {
-              clearInterval(progressIntervalRef.current);
-              progressIntervalRef.current = null;
-            }
+            if (progressInterval) clearInterval(progressInterval);
             return 90;
           }
           return prev + 10;
         });
-      }, 200);
+      }, 300);
 
       const fileId = await uploadTask;
       
-      // Check if aborted after upload - this is handled by cancelUpload
-      if (uploadAbortedRef.current) {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-        if (uploadTimeoutRef.current) {
-          clearTimeout(uploadTimeoutRef.current);
-          uploadTimeoutRef.current = null;
-        }
-        // File deletion is handled by cancelUpload function which awaits the promise
-        return;
-      }
-
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      if (uploadTimeoutRef.current) {
-        clearTimeout(uploadTimeoutRef.current);
-        uploadTimeoutRef.current = null;
-      }
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
       setUploadProgress(100);
 
       const audioUrl = await getFileUrl(fileId);
-
-      // Final check before sending message
-      if (uploadAbortedRef.current) {
-        return;
-      }
 
       // Send message with audio
       await addDoc("messages", {
@@ -444,12 +303,9 @@ export default function ChatPage() {
       setMessageInput("");
       toast({
         title: "Message vocal envoyé",
-        description: "Votre message vocal a été envoyé avec succès",
+        description: "Votre message vocal a été envoyée avec succès",
       });
     } catch (error) {
-      if (uploadAbortedRef.current) {
-        return;
-      }
       console.error("Error uploading audio:", error);
       toast({
         variant: "destructive",
@@ -457,20 +313,10 @@ export default function ChatPage() {
         description: "Impossible d'envoyer le message vocal",
       });
     } finally {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      if (uploadTimeoutRef.current) {
-        clearTimeout(uploadTimeoutRef.current);
-        uploadTimeoutRef.current = null;
-      }
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
       setUploading(false);
       setUploadProgress(0);
-      // Only reset abort flag if not aborted (to maintain state for cleanup)
-      if (!uploadAbortedRef.current) {
-        uploadAbortedRef.current = false;
-      }
     }
   }
 
@@ -687,23 +533,11 @@ export default function ChatPage() {
           {/* Upload Progress */}
           {uploading && (
             <div className="mb-3">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {uploadProgress < 100 ? "Téléchargement..." : "Envoi..."}
-                  </span>
-                  <span className="text-sm font-medium">{uploadProgress}%</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={cancelUpload}
-                  className="h-6"
-                  data-testid="button-cancel-upload"
-                >
-                  Annuler
-                </Button>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm text-muted-foreground">
+                  {uploadProgress < 100 ? "Téléchargement..." : "Envoi..."}
+                </span>
+                <span className="text-sm font-medium">{uploadProgress}%</span>
               </div>
               <Progress value={uploadProgress} className="h-2" />
             </div>
