@@ -1,4 +1,7 @@
+import { config } from 'dotenv';
 import { Client, Databases } from 'node-appwrite';
+
+config();
 
 const client = new Client()
   .setEndpoint(process.env.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1')
