@@ -28,9 +28,11 @@ Key features include:
 - **Communication**: Real-time group chat using Appwrite real-time subscriptions.
 - **Content Management**:
     - **Public Blog**: Article management (draft/published), image uploads, visible to all.
+    - **Long-form Blog Videos**: YouTube-style video space with administrator upload, publication, editing and deletion.
     - **Video Advertisements**: Upload and management of promotional videos.
+    - **Advertisement Playback**: Active advertisements play in order and advance only after the current video ends.
 
-**Appwrite Collections** (11 total):
+**Appwrite Collections** (12 total):
 1. `users` - User profiles with roles
 2. `projects` - Project management
 3. `payments` - Payment records and validation
@@ -42,6 +44,7 @@ Key features include:
 9. `messages` - Real-time chat messages
 10. `blog-posts` - Blog articles
 11. `ads` - Video advertisements
+12. `blog-videos` - Long-form blog videos
 
 **Appwrite Storage**:
 - Single bucket: `payment-proofs` (free tier limitation: 1 bucket)
@@ -49,11 +52,12 @@ Key features include:
   - `payments/` - Payment proof documents
   - `blog/` - Blog post images
   - `ads/` - Advertisement videos
+  - `blog-videos/` - Long-form blog videos
   - `profiles/` - Profile pictures
 
 **Security Rules**: Comprehensive database and storage permissions are implemented with role-based access control.
 
-**First User Setup**: The first user to register automatically receives the "admin" role.
+**Registration**: The registration form uses the Tchoutsi directory autocomplete. A selected directory member receives a generated account with the temporary password `123456`, is required to choose a personal password on first connection, and can subsequently sign in with their full name or email.
 
 ## External Dependencies
 - **Appwrite**:
@@ -87,6 +91,7 @@ Required secrets in Replit:
 - `client/src/lib/firebase-compat.ts` - Firebase compatibility wrapper for Appwrite
 - `client/src/contexts/AuthContext.tsx` - Authentication context using Appwrite Auth
 - `scripts/init-appwrite.ts` - Automated Appwrite project initialization
+- `scripts/ensure-directory-and-blog-videos.ts` - Non-destructive upgrade for directory account fields and long-form video collection
 - `scripts/test-signup.ts` - Registration testing script
 
 ## Recent Changes

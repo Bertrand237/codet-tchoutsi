@@ -9,9 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Newspaper, Upload, Calendar, Pencil, Trash2 } from "lucide-react";
-import type { BlogPost } from "@shared/schema";
-import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, orderBy, where, deleteDoc } from '@/lib/firebase-compat';
+import { Plus, Newspaper, Upload, Calendar, Pencil, Trash2, Video, Play, Pause } from "lucide-react";
+import type { BlogPost, BlogVideo } from "@shared/schema";
+import { addDoc, db, doc, getDocs, getDownloadURL, query, ref, storage, toDate, updateDoc, uploadBytes, uploadBytesResumable, orderBy, where, deleteDoc } from '@/lib/firebase-compat';
 
 export default function BlogPage() {
   const { userProfile } = useAuth();
@@ -30,11 +30,24 @@ export default function BlogPage() {
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [videos, setVideos] = useState<BlogVideo[]>([]);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [videoEditDialogOpen, setVideoEditDialogOpen] = useState(false);
+  const [editingVideo, setEditingVideo] = useState<BlogVideo | null>(null);
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoFormData, setVideoFormData] = useState({
+    title: "",
+    description: "",
+    isPublished: false,
+  });
 
   const canManageBlog = userProfile && (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire" || userProfile.role === "celcom");
 
   useEffect(() => {
     fetchPosts();
+    fetchVideos();
   }, [canManageBlog]);
 
   async function fetchPosts() {
@@ -71,6 +84,40 @@ export default function BlogPage() {
       });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchVideos() {
+    try {
+      const videosRef = "blog-videos";
+      let q = query(videosRef, orderBy("createdAt", "desc"));
+
+      if (!canManageBlog) {
+        q = query(videosRef, where("isPublished", "==", true), orderBy("createdAt", "desc"));
+      }
+
+      const snapshot = await getDocs(q);
+      const videosData = snapshot.documents.map((document) => ({
+        id: document.$id,
+        title: document.title,
+        description: document.description || "",
+        videoUrl: document.videoUrl,
+        authorId: document.authorId,
+        authorName: document.authorName,
+        isPublished: document.isPublished === true,
+        publishedAt: document.publishedAt ? toDate(document.publishedAt) : undefined,
+        createdAt: toDate(document.createdAt) || new Date(),
+        updatedAt: toDate(document.updatedAt) || new Date(),
+      })) as BlogVideo[];
+
+      setVideos(videosData);
+    } catch (error) {
+      console.error("Error fetching blog videos:", error);
+      toast({
+        variant: "destructive",
+        title: "Vidéos indisponibles",
+        description: "La collection des vidéos longues n'est pas encore configurée dans Appwrite.",
+      });
     }
   }
 
@@ -240,6 +287,152 @@ export default function BlogPage() {
     }
   }
 
+  function resetVideoForm() {
+    setVideoFormData({ title: "", description: "", isPublished: false });
+    setVideoFile(null);
+    setVideoUploadProgress(0);
+    setEditingVideo(null);
+  }
+
+  async function handleSubmitVideo(event: React.FormEvent) {
+    event.preventDefault();
+    if (!userProfile || !videoFile) {
+      toast({
+        variant: "destructive",
+        title: "Vidéo requise",
+        description: "Sélectionnez un fichier vidéo avant de continuer.",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    setVideoUploadProgress(0);
+
+    try {
+      const storageRef = ref(storage, `blog-videos/${Date.now()}_${videoFile.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, videoFile);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => setVideoUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100),
+        () => {
+          setSubmitting(false);
+          setVideoUploadProgress(0);
+          toast({ variant: "destructive", title: "Erreur", description: "Impossible de télécharger la vidéo." });
+        },
+        async () => {
+          try {
+            const snapshot = await uploadTask;
+            const videoUrl = await getDownloadURL(snapshot.ref);
+            await addDoc("blog-videos", {
+              title: videoFormData.title,
+              description: videoFormData.description,
+              videoUrl,
+              authorId: userProfile.id,
+              authorName: userProfile.displayName,
+              isPublished: videoFormData.isPublished,
+              publishedAt: videoFormData.isPublished ? new Date().toISOString() : null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+            toast({
+              title: "Vidéo ajoutée",
+              description: videoFormData.isPublished ? "La vidéo est maintenant visible dans le blog." : "La vidéo a été enregistrée en brouillon.",
+            });
+            setVideoDialogOpen(false);
+            resetVideoForm();
+            fetchVideos();
+          } catch (error) {
+            console.error("Error creating blog video:", error);
+            toast({ variant: "destructive", title: "Erreur", description: "Impossible d'enregistrer la vidéo." });
+          } finally {
+            setSubmitting(false);
+            setVideoUploadProgress(0);
+          }
+        },
+      );
+    } catch (error) {
+      console.error("Error uploading blog video:", error);
+      setSubmitting(false);
+      toast({ variant: "destructive", title: "Erreur", description: "Impossible d'ajouter la vidéo." });
+    }
+  }
+
+  function handleEditVideo(video: BlogVideo) {
+    setEditingVideo(video);
+    setVideoFormData({
+      title: video.title,
+      description: video.description || "",
+      isPublished: video.isPublished,
+    });
+    setVideoFile(null);
+    setVideoEditDialogOpen(true);
+  }
+
+  async function handleUpdateVideo(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editingVideo) return;
+    setSubmitting(true);
+
+    try {
+      const updateData: Record<string, unknown> = {
+        title: videoFormData.title,
+        description: videoFormData.description,
+        isPublished: videoFormData.isPublished,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (videoFormData.isPublished && !editingVideo.isPublished) {
+        updateData.publishedAt = new Date().toISOString();
+      }
+
+      if (videoFile) {
+        const storageRef = ref(storage, `blog-videos/${Date.now()}_${videoFile.name}`);
+        await uploadBytes(storageRef, videoFile);
+        updateData.videoUrl = await getDownloadURL(storageRef);
+      }
+
+      await updateDoc({ collectionId: "blog-videos", id: editingVideo.id }, updateData);
+      toast({ title: "Vidéo modifiée", description: "Les informations de la vidéo ont été mises à jour." });
+      setVideoEditDialogOpen(false);
+      resetVideoForm();
+      fetchVideos();
+    } catch (error) {
+      console.error("Error updating blog video:", error);
+      toast({ variant: "destructive", title: "Erreur", description: "Impossible de modifier la vidéo." });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function toggleVideoPublishStatus(video: BlogVideo) {
+    try {
+      await updateDoc({ collectionId: "blog-videos", id: video.id }, {
+        isPublished: !video.isPublished,
+        publishedAt: !video.isPublished ? new Date().toISOString() : null,
+        updatedAt: new Date().toISOString(),
+      });
+      toast({ title: !video.isPublished ? "Vidéo publiée" : "Vidéo dépubliée", description: "Le statut de la vidéo a été mis à jour." });
+      fetchVideos();
+    } catch (error) {
+      console.error("Error toggling blog video:", error);
+      toast({ variant: "destructive", title: "Erreur", description: "Impossible de modifier le statut de la vidéo." });
+    }
+  }
+
+  async function handleDeleteVideo() {
+    if (!deletingVideoId) return;
+    try {
+      await deleteDoc({ collectionId: "blog-videos", id: deletingVideoId });
+      toast({ title: "Vidéo supprimée", description: "La vidéo a été supprimée du blog." });
+      setDeletingVideoId(null);
+      fetchVideos();
+    } catch (error) {
+      console.error("Error deleting blog video:", error);
+      toast({ variant: "destructive", title: "Erreur", description: "Impossible de supprimer la vidéo." });
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -256,6 +449,7 @@ export default function BlogPage() {
           <p className="text-muted-foreground">Actualités et annonces du comité</p>
         </div>
         {canManageBlog && (
+          <div className="flex flex-wrap gap-2">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-post">
@@ -349,6 +543,84 @@ export default function BlogPage() {
               </form>
             </DialogContent>
           </Dialog>
+          <Dialog open={videoDialogOpen} onOpenChange={(open) => {
+            setVideoDialogOpen(open);
+            if (!open) resetVideoForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-add-blog-video">
+                <Video className="mr-2 h-4 w-4" />
+                Nouvelle vidéo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Ajouter une vidéo longue</DialogTitle>
+                <DialogDescription>
+                  Ajoutez une vidéo au format chaîne vidéo, visible dans l'espace Vidéos du blog.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmitVideo} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="video-title">Titre</Label>
+                  <Input
+                    id="video-title"
+                    value={videoFormData.title}
+                    onChange={(event) => setVideoFormData({ ...videoFormData, title: event.target.value })}
+                    placeholder="Titre de la vidéo"
+                    required
+                    className="h-12"
+                    data-testid="input-blog-video-title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="video-description">Description</Label>
+                  <Textarea
+                    id="video-description"
+                    value={videoFormData.description}
+                    onChange={(event) => setVideoFormData({ ...videoFormData, description: event.target.value })}
+                    placeholder="Présentez cette vidéo..."
+                    rows={4}
+                    data-testid="input-blog-video-description"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="blog-video-file">Fichier vidéo</Label>
+                  <Input
+                    id="blog-video-file"
+                    type="file"
+                    accept="video/*"
+                    onChange={(event) => setVideoFile(event.target.files?.[0] || null)}
+                    required
+                    className="h-12"
+                    data-testid="input-blog-video-file"
+                  />
+                </div>
+                {submitting && videoUploadProgress > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Téléchargement : {Math.round(videoUploadProgress)}%
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="video-published"
+                    checked={videoFormData.isPublished}
+                    onChange={(event) => setVideoFormData({ ...videoFormData, isPublished: event.target.checked })}
+                    className="h-4 w-4"
+                    data-testid="checkbox-blog-video-published"
+                  />
+                  <Label htmlFor="video-published" className="cursor-pointer">Publier immédiatement</Label>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={submitting} data-testid="button-submit-blog-video">
+                    {submitting ? `Téléchargement... ${Math.round(videoUploadProgress)}%` : "Ajouter la vidéo"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          </div>
         )}
       </div>
 
@@ -442,6 +714,179 @@ export default function BlogPage() {
           ))
         )}
       </div>
+
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4 border-b pb-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-2xl font-bold">
+              <Video className="h-6 w-6 text-primary" />
+              Vidéos longues
+            </h2>
+            <p className="text-muted-foreground">Retrouvez les émissions, reportages et rencontres du comité.</p>
+          </div>
+          <Badge variant="secondary">{videos.length} vidéo{videos.length > 1 ? "s" : ""}</Badge>
+        </div>
+
+        {videos.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Video className="mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-center text-muted-foreground">Aucune vidéo longue publiée pour le moment.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {videos.map((video) => (
+              <Card key={video.id} className="overflow-hidden hover-elevate" data-testid={`card-blog-video-${video.id}`}>
+                <div className="aspect-video bg-black">
+                  <video
+                    src={video.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="h-full w-full object-cover"
+                    data-testid={`video-blog-${video.id}`}
+                  >
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                  </video>
+                </div>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="line-clamp-2 text-lg font-semibold">{video.title}</h3>
+                    {canManageBlog && (
+                      video.isPublished ? (
+                        <Badge className="shrink-0 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                          Publiée
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0">Brouillon</Badge>
+                      )
+                    )}
+                  </div>
+                  {video.description && <p className="line-clamp-3 text-sm text-muted-foreground">{video.description}</p>}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Par {video.authorName}</span>
+                    <span>{video.createdAt.toLocaleDateString("fr-FR")}</span>
+                  </div>
+                  {canManageBlog && (
+                    <div className="flex flex-wrap gap-2 border-t pt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleVideoPublishStatus(video)}
+                        data-testid={`button-toggle-blog-video-${video.id}`}
+                      >
+                        {video.isPublished ? <Pause className="mr-1 h-4 w-4" /> : <Play className="mr-1 h-4 w-4" />}
+                        {video.isPublished ? "Dépublier" : "Publier"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditVideo(video)}
+                        data-testid={`button-edit-blog-video-${video.id}`}
+                      >
+                        <Pencil className="mr-1 h-4 w-4" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeletingVideoId(video.id)}
+                        data-testid={`button-delete-blog-video-${video.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <Dialog open={videoEditDialogOpen} onOpenChange={(open) => {
+        setVideoEditDialogOpen(open);
+        if (!open) resetVideoForm();
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier la vidéo</DialogTitle>
+            <DialogDescription>Modifiez les informations ou remplacez le fichier vidéo.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateVideo} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-video-title">Titre</Label>
+              <Input
+                id="edit-video-title"
+                value={videoFormData.title}
+                onChange={(event) => setVideoFormData({ ...videoFormData, title: event.target.value })}
+                required
+                className="h-12"
+                data-testid="input-edit-blog-video-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-video-description">Description</Label>
+              <Textarea
+                id="edit-video-description"
+                value={videoFormData.description}
+                onChange={(event) => setVideoFormData({ ...videoFormData, description: event.target.value })}
+                rows={4}
+                data-testid="input-edit-blog-video-description"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-blog-video-file">Remplacer la vidéo (optionnel)</Label>
+              <Input
+                id="edit-blog-video-file"
+                type="file"
+                accept="video/*"
+                onChange={(event) => setVideoFile(event.target.files?.[0] || null)}
+                className="h-12"
+                data-testid="input-edit-blog-video-file"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-video-published"
+                checked={videoFormData.isPublished}
+                onChange={(event) => setVideoFormData({ ...videoFormData, isPublished: event.target.checked })}
+                className="h-4 w-4"
+                data-testid="checkbox-edit-blog-video-published"
+              />
+              <Label htmlFor="edit-video-published" className="cursor-pointer">Publier la vidéo</Label>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setVideoEditDialogOpen(false)} disabled={submitting}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={submitting} data-testid="button-save-blog-video">
+                {submitting ? "Mise à jour..." : "Enregistrer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deletingVideoId} onOpenChange={(open) => !open && setDeletingVideoId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette vidéo ?</AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible. La vidéo sera retirée du blog.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteVideo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-blog-video"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={editDialogOpen} onOpenChange={(open) => {
         setEditDialogOpen(open);

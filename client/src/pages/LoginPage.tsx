@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,8 +22,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      setLocation("/dashboard");
+      const result = await signIn(identifier, password);
+      setLocation(result.requiresPasswordChange ? "/change-password" : "/dashboard");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -56,15 +56,15 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
+                <Label htmlFor="identifier">Nom complet ou adresse email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="exemple@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  placeholder="Votre nom dans l'annuaire"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  data-testid="input-email"
+                  data-testid="input-identifier"
                   className="h-12"
                 />
               </div>

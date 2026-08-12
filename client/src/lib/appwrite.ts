@@ -28,6 +28,7 @@ export const COLLECTIONS = {
   FAMILIES: 'families',
   MESSAGES: 'messages',
   BLOG_POSTS: 'blog-posts',
+  BLOG_VIDEOS: 'blog-videos',
   ADS: 'ads',
 };
 
@@ -40,6 +41,7 @@ export const STORAGE_FOLDERS = {
   PAYMENT_PROOFS: 'payments/',
   BLOG_IMAGES: 'blog/',
   ADS_VIDEOS: 'ads/',
+  BLOG_VIDEOS: 'blog-videos/',
   PROFILE_PICTURES: 'profiles/',
 };
 

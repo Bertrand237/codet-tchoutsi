@@ -25,9 +25,10 @@ import BlogPage from "@/pages/BlogPage";
 import AdsPage from "@/pages/AdsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFound from "@/pages/not-found";
+import ChangePasswordPage from "@/pages/ChangePasswordPage";
 
 function AuthenticatedRouter() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, userProfile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -79,6 +80,10 @@ function AuthenticatedRouter() {
     );
   }
 
+  if (userProfile?.mustChangePassword && window.location.pathname !== "/change-password") {
+    return <Redirect to="/change-password" />;
+  }
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -98,6 +103,11 @@ function AuthenticatedRouter() {
               <Route path="/" component={() => <Redirect to="/dashboard" />} />
               <Route path="/login" component={() => <Redirect to="/dashboard" />} />
               <Route path="/register" component={() => <Redirect to="/dashboard" />} />
+              <Route path="/change-password">
+                <ProtectedRoute>
+                  <ChangePasswordPage />
+                </ProtectedRoute>
+              </Route>
               
               <Route path="/dashboard">
                 <ProtectedRoute>
@@ -156,7 +166,7 @@ function AuthenticatedRouter() {
               <Route path="/blog" component={BlogPage} />
 
               <Route path="/ads">
-                <ProtectedRoute allowedRoles={["admin", "président"]}>
+                <ProtectedRoute allowedRoles={["admin", "président", "secretaire", "celcom"]}>
                   <AdsPage />
                 </ProtectedRoute>
               </Route>

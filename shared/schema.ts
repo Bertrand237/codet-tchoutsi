@@ -13,6 +13,8 @@ export const userSchema = z.object({
   profession: z.string().optional(),
   photoURL: z.string().optional(),
   phoneNumber: z.string().optional(),
+  directoryId: z.string().optional(),
+  mustChangePassword: z.boolean().optional(),
   createdAt: z.date(),
 });
 
@@ -121,6 +123,24 @@ export type Advertisement = z.infer<typeof advertisementSchema>;
 
 export const insertAdvertisementSchema = advertisementSchema.omit({ id: true, createdAt: true });
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
+
+// Long-form videos published in the blog
+export const blogVideoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  videoUrl: z.string(),
+  authorId: z.string(),
+  authorName: z.string(),
+  isPublished: z.boolean(),
+  publishedAt: z.date().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type BlogVideo = z.infer<typeof blogVideoSchema>;
+export const insertBlogVideoSchema = blogVideoSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertBlogVideo = z.infer<typeof insertBlogVideoSchema>;
 
 // Project schema
 export const projectStatuses = ["planifié", "en_cours", "en_pause", "terminé", "archivé"] as const;

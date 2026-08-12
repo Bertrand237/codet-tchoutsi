@@ -6,37 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Search } from "lucide-react";
+import { directoryMembers, type DirectoryMember } from "@shared/directory";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [profession, setProfession] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<DirectoryMember | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUpFromDirectory } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
+    if (!selectedMember) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Les mots de passe ne correspondent pas",
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Le mot de passe doit contenir au moins 6 caractères",
+        title: "Choisissez votre nom",
+        description: "Sélectionnez votre nom dans les propositions de l'annuaire.",
       });
       return;
     }
@@ -44,13 +33,12 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Tout le monde est "membre" par défaut (sauf le premier qui devient admin automatiquement)
-      await signUp(email, password, displayName, "membre", profession);
+      await signUpFromDirectory(selectedMember);
       toast({
         title: "Bienvenue !",
-        description: "Votre compte a été créé avec succès",
+        description: "Votre compte a été créé. Vous allez choisir un nouveau mot de passe.",
       });
-      setLocation("/dashboard");
+      setLocation("/change-password");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -83,17 +71,64 @@ export default function RegisterPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName">Nom complet</Label>
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="Jean Dupont"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                  data-testid="input-displayname"
-                  className="h-12"
-                />
+                <Label htmlFor="displayName">Recherchez votre nom dans l'annuaire</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="Commencez à saisir votre nom"
+                    value={displayName}
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                      setSelectedMember(null);
+                    }}
+                    required
+                    autoComplete="off"
+                    data-testid="input-displayname"
+                    className="h-12 pl-10"
+                  />
+                  {displayName.trim() && !selectedMember && (
+                    <div className="absolute left-0 right-0 top-14 z-20 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 shadow-lg">
+                      {directoryMembers
+                        .filter((member) =>
+                          member.fullName.toLocaleLowerCase("fr-FR").includes(displayName.trim().toLocaleLowerCase("fr-FR")),
+                        )
+                        .map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            className="flex w-full items-center justify-between rounded-sm px-3 py-3 text-left hover:bg-accent"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setDisplayName(member.fullName);
+                            }}
+                          >
+                            <span>
+                              <span className="block font-medium">{member.fullName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {member.delegation}{member.phone ? ` • ${member.phone}` : ""}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      {directoryMembers.filter((member) =>
+                        member.fullName.toLocaleLowerCase("fr-FR").includes(displayName.trim().toLocaleLowerCase("fr-FR")),
+                      ).length === 0 && (
+                        <p className="px-3 py-3 text-sm text-muted-foreground">Aucune correspondance dans l'annuaire.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {selectedMember && (
+                  <p className="flex items-center gap-1 text-sm text-primary">
+                    <Check className="h-4 w-4" />
+                    Nom sélectionné : {selectedMember.fullName}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Le compte sera créé automatiquement avec le mot de passe provisoire 123456.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -105,60 +140,6 @@ export default function RegisterPage() {
                   value={profession}
                   onChange={(e) => setProfession(e.target.value)}
                   data-testid="input-profession"
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Adresse email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="exemple@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-email"
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    data-testid="input-password"
-                    className="h-12 pr-12"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1 h-10 w-10"
-                    onClick={() => setShowPassword(!showPassword)}
-                    data-testid="button-toggle-password"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  data-testid="input-confirm-password"
                   className="h-12"
                 />
               </div>

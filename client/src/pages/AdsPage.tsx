@@ -31,10 +31,17 @@ export default function AdsPage() {
   const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const activeAds = ads.filter((ad) => ad.isActive);
+  const currentAd = activeAds[currentAdIndex];
 
   useEffect(() => {
     fetchAds();
   }, []);
+
+  useEffect(() => {
+    setCurrentAdIndex(0);
+  }, [activeAds.length]);
 
   async function fetchAds() {
     try {
@@ -51,7 +58,7 @@ export default function AdsPage() {
         createdAt: toDate(doc.createdAt) || new Date(),
       })) as Advertisement[];
 
-      setAds(adsData);
+      setAds(adsData.sort((a, b) => a.order - b.order || b.createdAt.getTime() - a.createdAt.getTime()));
     } catch (error) {
       console.error("Error fetching ads:", error);
       toast({
@@ -387,6 +394,45 @@ export default function AdsPage() {
           </Dialog>
         )}
       </div>
+
+      {currentAd && (
+        <Card className="overflow-hidden border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Play className="h-5 w-5 text-primary" />
+                  Lecture des publicités
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Chaque vidéo se termine avant le passage automatique à la suivante.
+                </p>
+              </div>
+              <Badge variant="outline">{currentAdIndex + 1} / {activeAds.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mx-auto max-w-3xl overflow-hidden rounded-lg bg-black">
+              <video
+                key={currentAd.id}
+                src={currentAd.videoUrl}
+                controls
+                autoPlay
+                playsInline
+                className="aspect-video h-full w-full"
+                onEnded={() => setCurrentAdIndex((index) => (index + 1) % activeAds.length)}
+                data-testid="video-ad-sequence"
+              >
+                Votre navigateur ne supporte pas la lecture vidéo.
+              </video>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <p className="font-medium">{currentAd.title}</p>
+              <p className="text-sm text-muted-foreground">Publicités actives uniquement</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {ads.length === 0 ? (
