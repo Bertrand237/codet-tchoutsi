@@ -8,6 +8,13 @@ const client = new Client()
 const databases = new Databases(client);
 const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || "codet-db";
 
+const publicContentPermissions = [
+  Permission.read(Role.any()),
+  Permission.create(Role.users()),
+  Permission.update(Role.users()),
+  Permission.delete(Role.users()),
+];
+
 async function createAttributeIfMissing(
   collectionId: string,
   attribute: { key: string; type: "string" | "boolean"; size?: number },
@@ -24,44 +31,54 @@ async function createAttributeIfMissing(
   }
 }
 
+async function ensurePublicContentPermissions(collectionId: string) {
+  const collection = await databases.getCollection(databaseId, collectionId);
+
+  await databases.updateCollection(
+    databaseId,
+    collectionId,
+    collection.name,
+    publicContentPermissions,
+    collection.documentSecurity,
+    collection.enabled,
+  );
+
+  console.log(`Permissions publiques configurées : ${collectionId}`);
+}
+
 async function ensureBlogVideosCollection() {
   try {
     await databases.getCollection(databaseId, "blog-videos");
     console.log("Collection blog-videos déjà présente.");
-    return;
   } catch (error: any) {
     if (error?.code !== 404) throw error;
+    await databases.createCollection(
+      databaseId,
+      "blog-videos",
+      "Blog Videos",
+      publicContentPermissions,
+    );
+
+    const attributes = [
+      { key: "title", type: "string" as const, size: 255 },
+      { key: "description", type: "string" as const, size: 5000 },
+      { key: "videoUrl", type: "string" as const, size: 500 },
+      { key: "authorId", type: "string" as const, size: 255 },
+      { key: "authorName", type: "string" as const, size: 255 },
+      { key: "isPublished", type: "boolean" as const },
+      { key: "publishedAt", type: "string" as const, size: 64 },
+      { key: "createdAt", type: "string" as const, size: 64 },
+      { key: "updatedAt", type: "string" as const, size: 64 },
+    ];
+
+    for (const attribute of attributes) {
+      await createAttributeIfMissing("blog-videos", attribute);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    console.log("Collection blog-videos créée.");
   }
 
-  await databases.createCollection(
-    databaseId,
-    "blog-videos",
-    "Blog Videos",
-    [
-      Permission.read(Role.any()),
-      Permission.create(Role.users()),
-      Permission.update(Role.users()),
-      Permission.delete(Role.users()),
-    ],
-  );
-
-  const attributes = [
-    { key: "title", type: "string" as const, size: 255 },
-    { key: "description", type: "string" as const, size: 5000 },
-    { key: "videoUrl", type: "string" as const, size: 500 },
-    { key: "authorId", type: "string" as const, size: 255 },
-    { key: "authorName", type: "string" as const, size: 255 },
-    { key: "isPublished", type: "boolean" as const },
-    { key: "publishedAt", type: "string" as const, size: 64 },
-    { key: "createdAt", type: "string" as const, size: 64 },
-    { key: "updatedAt", type: "string" as const, size: 64 },
-  ];
-
-  for (const attribute of attributes) {
-    await createAttributeIfMissing("blog-videos", attribute);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-  }
-  console.log("Collection blog-videos créée.");
+  await ensurePublicContentPermissions("blog-videos");
 }
 
 async function main() {
@@ -71,6 +88,8 @@ async function main() {
 
   await createAttributeIfMissing("users", { key: "directoryId", type: "string", size: 255 });
   await createAttributeIfMissing("users", { key: "mustChangePassword", type: "boolean" });
+  await ensurePublicContentPermissions("blog-posts");
+  await ensurePublicContentPermissions("ads");
   await ensureBlogVideosCollection();
   console.log("Mise à niveau terminée.");
 }

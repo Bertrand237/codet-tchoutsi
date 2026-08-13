@@ -41,7 +41,7 @@ Votre application CODET utilise Appwrite Cloud (gratuit) comme backend. Vous n'a
 
 3. **Configurer le build**
    - Build command: `npm run build`
-   - Publish directory: `dist`
+   - Publish directory: `dist/public`
    - (Le fichier `netlify.toml` est déjà configuré)
 
 4. **Ajouter les variables d'environnement**
@@ -80,7 +80,7 @@ Votre application CODET utilise Appwrite Cloud (gratuit) comme backend. Vous n'a
    - Vercel détecte automatiquement Vite
    - Framework Preset: Vite
    - Build Command: `npm run build`
-   - Output Directory: `dist`
+   - Output Directory: `dist/public`
 
 4. **Variables d'environnement**
    - Dans les paramètres du projet, ajoutez :
@@ -112,7 +112,7 @@ Votre application CODET utilise Appwrite Cloud (gratuit) comme backend. Vous n'a
 
 3. **Configuration**
    - Build Command: `npm run build`
-   - Publish Directory: `dist`
+   - Publish Directory: `dist/public`
 
 4. **Variables d'environnement**
    - Ajoutez les 3 variables Appwrite
@@ -138,7 +138,7 @@ Votre application CODET utilise Appwrite Cloud (gratuit) comme backend. Vous n'a
 3. **Configuration**
    - Framework preset: Vite
    - Build command: `npm run build`
-   - Build output directory: `dist`
+   - Build output directory: `dist/public`
 
 4. **Variables d'environnement**
    - Ajoutez les 3 variables Appwrite

@@ -1,0 +1,1 @@
+- [Netlify et Appwrite](netlify-appwrite-deployment.md) — le frontend publie `dist/public` et les collections de contenu existantes doivent recevoir explicitement la lecture publique.

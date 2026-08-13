@@ -92,7 +92,7 @@ git push github main
 3. **Configuration du build**
    ```
    Build command: npm run build
-   Publish directory: dist
+   Publish directory: dist/public
    ```
    (Ces paramètres sont déjà dans netlify.toml, Netlify les détectera automatiquement)
 

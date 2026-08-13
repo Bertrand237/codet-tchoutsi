@@ -8,7 +8,7 @@
 import { databases, storage as appwriteStorage, client as appwriteClient } from './appwrite';
 import { Query, ID } from 'appwrite';
 
-const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'codet-db';
 const STORAGE_BUCKET_ID = 'payment-proofs';
 
 // ==================== Query Builder ====================

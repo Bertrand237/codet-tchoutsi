@@ -280,7 +280,7 @@ codet-tchoutsi/
 
 ```bash
 npm run dev              # Serveur de développement (localhost:5000)
-npm run build            # Build de production (dist/)
+npm run build            # Build de production (dist/public/)
 npm run start            # Serveur de production
 npm run check            # Vérification TypeScript
 ```

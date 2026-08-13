@@ -59,6 +59,20 @@ Variables d'environnement requises :
 - Vérifiez que `APPWRITE_API_KEY` est correctement configuré
 - Vérifiez que la clé a les permissions nécessaires
 
+**Erreur : "The current user is not authorized" lors de la mise à niveau du contenu**
+- La clé doit avoir au minimum les scopes Appwrite suivants :
+  - `databases.read`
+  - `collections.read`
+  - `collections.update`
+  - `attributes.read`
+  - `attributes.create`
+- Dans Appwrite Console : **Settings → API Keys**, modifiez la clé utilisée par `APPWRITE_API_KEY` ou créez-en une nouvelle avec ces scopes.
+- Relancez ensuite :
+  ```bash
+  npm run appwrite:ensure-content
+  ```
+- Le script met à jour uniquement les permissions de lecture publique de `blog-posts`, `blog-videos` et `ads`. Il ne supprime aucun utilisateur ni document.
+
 **Erreur : "Collection not found"**
 - Vérifiez `VITE_APPWRITE_DATABASE_ID`
 - Vérifiez que les collections `users` et `projects` existent
