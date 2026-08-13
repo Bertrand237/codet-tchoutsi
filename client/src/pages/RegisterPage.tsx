@@ -127,7 +127,7 @@ export default function RegisterPage() {
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Le compte sera créé automatiquement avec le mot de passe provisoire 123456.
+                  Annuaire disponible : {directoryMembers.length} personnes. Le compte sera créé automatiquement avec le mot de passe provisoire 123456.
                 </p>
               </div>
 
