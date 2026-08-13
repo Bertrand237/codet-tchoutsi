@@ -1,1 +1,2 @@
 - [Netlify et Appwrite](netlify-appwrite-deployment.md) — le frontend publie `dist/public` et les collections de contenu existantes doivent recevoir explicitement la lecture publique.
+- [Build hors Replit](external-build-lockfile.md) — le lockfile ne doit contenir aucune URL `package-firewall.replit.local` pour les builds externes.
