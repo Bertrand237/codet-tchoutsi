@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Upload, CheckCircle, XCircle, Clock, FileText, Download, FileDown, Trash2 } from "lucide-react";
 import type { Payment, PaymentMode, InsertPayment } from "@shared/schema";
 import { exportPaymentsPDF, exportToCSV } from "@/lib/pdfUtils";
-import { addDoc, collection, db, doc, getDocs, getDownloadURL, orderBy, query, ref, storage, toDate, updateDoc, uploadBytes, where, deleteDoc } from '@/lib/firebase-compat';
+import { addDoc, collection, db, doc, getDoc, getDocs, getDownloadURL, orderBy, query, ref, storage, toDate, updateDoc, uploadBytes, where, deleteDoc } from '@/lib/firebase-compat';
 
 export default function PaymentsPage() {
   const { userProfile } = useAuth();
@@ -46,12 +46,37 @@ export default function PaymentsPage() {
       }
 
       const snapshot = await getDocs(q);
+      
+      // Récupérer uniquement les utilisateurs nécessaires (filtrer les undefined/null)
+      const uniqueUserIds = Array.from(
+        new Set(
+          snapshot.documents
+            .map(doc => doc.userId)
+            .filter(userId => userId !== undefined && userId !== null && userId !== "")
+        )
+      );
+      const usersMap = new Map<string, string>();
+      
+      // Récupérer les infos des utilisateurs individuellement
+      await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc("users", userId));
+            const userData = userDoc.data();
+            usersMap.set(userId, userData?.displayName || "Inconnu");
+          } catch (error) {
+            console.error(`Error fetching user ${userId}:`, error);
+            usersMap.set(userId, "Inconnu");
+          }
+        })
+      );
+      
       const paymentsData = snapshot.documents.map((doc) => ({
         id: doc.$id,
         membreId: doc.userId,
-        membreNom: doc.userName || "Inconnu",
+        membreNom: usersMap.get(doc.userId) || "Inconnu",
         montant: doc.amount || 0,
-        date: toDate(doc.paymentDate || doc.createdAt) || new Date(),
+        date: toDate(doc.createdAt) || new Date(),
         mode: doc.paymentType || "autre",
         preuveURL: doc.proofUrl,
         statut: doc.status || "en_attente",
@@ -91,9 +116,7 @@ export default function PaymentsPage() {
 
       const paymentData = {
         userId: userProfile.id,
-        userName: userProfile.displayName,
         amount: parseFloat(formData.montant),
-        paymentDate: new Date(formData.date).toISOString(),
         paymentType: formData.mode,
         description: formData.commentaire,
         proofUrl: preuveURL,

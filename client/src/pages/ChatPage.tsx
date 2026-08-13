@@ -8,9 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Send, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { Send, MessageSquare, Pencil, Trash2, Image as ImageIcon, Mic, MicOff, Smile } from "lucide-react";
 import type { Message } from "@shared/schema";
 import { Timestamp, addDoc, limit, onSnapshot, query, orderBy, serverTimestamp, toDate, updateDoc, deleteDoc } from '@/lib/firebase-compat';
+import { uploadFile, getFileUrl } from '@/lib/firebase-compat';
+import EmojiPicker from 'emoji-picker-react';
+import { Progress } from "@/components/ui/progress";
 
 export default function ChatPage() {
   const { userProfile } = useAuth();
@@ -23,6 +26,15 @@ export default function ChatPage() {
   const [editText, setEditText] = useState("");
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+
+  // Media states
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const messagesRef = "messages";
@@ -46,7 +58,10 @@ export default function ChatPage() {
             id: doc.$id,
             userId: data.userId || data.senderId,
             userName: data.userName || data.senderName,
-            text: data.text || data.content,
+            text: data.text || data.content || "",
+            messageType: data.messageType || "text",
+            imageUrl: data.imageUrl,
+            audioUrl: data.audioUrl,
             timestamp,
           };
         })
@@ -77,6 +92,7 @@ export default function ChatPage() {
       });
 
       setMessageInput("");
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -87,6 +103,257 @@ export default function ChatPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !userProfile) return;
+
+    // Validate image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner une image",
+      });
+      return;
+    }
+
+    // Validate size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "L'image ne doit pas dépasser 5 Mo",
+      });
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    // Declare intervals/timeouts at function scope for proper cleanup
+    let progressInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // Set 60 second timeout
+    timeoutId = setTimeout(() => {
+      if (progressInterval) clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      toast({
+        variant: "destructive",
+        title: "Timeout",
+        description: "L'upload a pris trop de temps. Veuillez réessayer.",
+      });
+    }, 60000);
+
+    try {
+      const uploadTask = uploadFile(`messages/${Date.now()}_${file.name}`, file);
+      
+      // Simulate progress
+      progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            if (progressInterval) clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+
+      const fileId = await uploadTask;
+      
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+      setUploadProgress(100);
+
+      const imageUrl = await getFileUrl(fileId);
+
+      // Send message with image (encode in text field)
+      await addDoc("messages", {
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        text: `[IMAGE]${imageUrl}[/IMAGE]${messageInput.trim() || ""}`,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessageInput("");
+      toast({
+        title: "Photo envoyée",
+        description: "Votre photo a été envoyée avec succès",
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer la photo",
+      });
+    } finally {
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+        await sendAudioMessage(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+      setAudioChunks([]);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'accéder au microphone",
+      });
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+      setMediaRecorder(null);
+    }
+  }
+
+  async function sendAudioMessage(audioBlob: Blob) {
+    if (!userProfile) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    // Declare intervals/timeouts at function scope for proper cleanup
+    let progressInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // Set 60 second timeout
+    timeoutId = setTimeout(() => {
+      if (progressInterval) clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      toast({
+        variant: "destructive",
+        title: "Timeout",
+        description: "L'upload a pris trop de temps. Veuillez réessayer.",
+      });
+    }, 60000);
+
+    try {
+      const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+      
+      const uploadTask = uploadFile(`messages/${audioFile.name}`, audioFile);
+      
+      // Simulate progress
+      progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            if (progressInterval) clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+
+      const fileId = await uploadTask;
+      
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+      setUploadProgress(100);
+
+      const audioUrl = await getFileUrl(fileId);
+
+      // Send message with audio (encode in text field)
+      await addDoc("messages", {
+        userId: userProfile.id,
+        userName: userProfile.displayName,
+        text: `[AUDIO]${audioUrl}[/AUDIO]${messageInput.trim() || ""}`,
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessageInput("");
+      toast({
+        title: "Message vocal envoyé",
+        description: "Votre message vocal a été envoyée avec succès",
+      });
+    } catch (error) {
+      console.error("Error uploading audio:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer le message vocal",
+      });
+    } finally {
+      if (progressInterval) clearInterval(progressInterval);
+      if (timeoutId) clearTimeout(timeoutId);
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  }
+
+  function handleEmojiClick(emojiData: any) {
+    setMessageInput((prev) => prev + emojiData.emoji);
+  }
+
+  // Parse message text to extract media URLs and plain text
+  // Supports both new encoded format and legacy message fields
+  function parseMessage(text: string, message?: Message) {
+    const imageMatch = text.match(/\[IMAGE\](.*?)\[\/IMAGE\]/);
+    const audioMatch = text.match(/\[AUDIO\](.*?)\[\/AUDIO\]/);
+    
+    let messageType: 'text' | 'image' | 'audio' = 'text';
+    let imageUrl: string | null = null;
+    let audioUrl: string | null = null;
+    let plainText = text;
+
+    // Check new encoded format first
+    if (imageMatch) {
+      messageType = 'image';
+      imageUrl = imageMatch[1];
+      plainText = text.replace(/\[IMAGE\].*?\[\/IMAGE\]/, '').trim();
+    } else if (audioMatch) {
+      messageType = 'audio';
+      audioUrl = audioMatch[1];
+      plainText = text.replace(/\[AUDIO\].*?\[\/AUDIO\]/, '').trim();
+    }
+    // Fall back to legacy fields if they exist
+    else if (message) {
+      if ((message as any).messageType === 'image' && (message as any).imageUrl) {
+        messageType = 'image';
+        imageUrl = (message as any).imageUrl;
+        plainText = text;
+      } else if ((message as any).messageType === 'audio' && (message as any).audioUrl) {
+        messageType = 'audio';
+        audioUrl = (message as any).audioUrl;
+        plainText = text;
+      }
+    }
+
+    return { messageType, imageUrl, audioUrl, plainText };
   }
 
   function handleEditMessage(message: Message) {
@@ -149,139 +416,269 @@ export default function ChatPage() {
 
   function canEditOrDelete(message: Message): boolean {
     if (!userProfile) return false;
-    return message.userId === userProfile.id || userProfile.role === "admin";
+    
+    // Admins and présidents can edit/delete any message
+    if (userProfile.role === "admin" || userProfile.role === "président" || userProfile.role === "secretaire_general") {
+      return true;
+    }
+    
+    // Users can only edit/delete their own messages within 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return message.userId === userProfile.id && message.timestamp > fiveMinutesAgo;
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-6">
+          <p>Vous devez être connecté pour accéder au chat</p>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-foreground">Messagerie CODET</h1>
-        <p className="text-muted-foreground">Groupe de discussion du comité</p>
+    <div className="h-full flex flex-col bg-muted/30">
+      {/* WhatsApp-style Header - Fixed */}
+      <div className="flex-shrink-0 bg-primary text-primary-foreground p-3 sm:p-4 shadow-md">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-base sm:text-lg truncate">Messagerie CODET</h1>
+            <p className="text-xs sm:text-sm text-primary-foreground/80 truncate">
+              {messages.length} message{messages.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            Groupe CODET
-            <span className="text-sm font-normal text-muted-foreground">
-              ({messages.length} messages)
-            </span>
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <ScrollArea className="h-full p-6">
-            <div className="space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-                  <p>Aucun message pour le moment</p>
-                  <p className="text-sm">Soyez le premier à envoyer un message !</p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const isOwnMessage = message.userId === userProfile?.id;
-                  const canEdit = canEditOrDelete(message);
-                  
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex gap-3 group ${isOwnMessage ? "flex-row-reverse" : ""}`}
-                      data-testid={`message-${message.id}`}
-                    >
-                      <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {message.userName?.charAt(0).toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div
-                        className={`flex-1 max-w-[70%] ${
-                          isOwnMessage ? "items-end" : "items-start"
-                        } flex flex-col gap-1`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {isOwnMessage ? "Vous" : message.userName}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {message.timestamp.toLocaleTimeString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-
-                        <div className="relative">
-                          <div
-                            className={`p-3 rounded-lg ${
-                              isOwnMessage
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
-                          >
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {message.text}
-                            </p>
-                          </div>
-                          
-                          {canEdit && (
-                            <div className={`absolute top-0 ${isOwnMessage ? "left-0" : "right-0"} -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1`}>
-                              <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-6 w-6"
-                                onClick={() => handleEditMessage(message)}
-                                data-testid={`button-edit-message-${message.id}`}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="destructive"
-                                className="h-6 w-6"
-                                onClick={() => setDeletingMessageId(message.id)}
-                                data-testid={`button-delete-message-${message.id}`}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={scrollRef} />
+      {/* Messages Area - Scrollable */}
+      <ScrollArea className="flex-1 bg-muted/30">
+        <div className="p-3 sm:p-4 space-y-3">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <MessageSquare className="h-16 w-16 mb-4 opacity-30" />
+              <p className="text-sm font-medium">Aucun message</p>
+              <p className="text-xs">Soyez le premier à écrire !</p>
             </div>
-          </ScrollArea>
-        </CardContent>
+          ) : (
+            messages.map((message) => {
+              const isOwnMessage = message.userId === userProfile?.id;
+              const canEdit = canEditOrDelete(message);
+              const { messageType, imageUrl, audioUrl, plainText } = parseMessage(message.text, message);
+              
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-2 items-end group ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                  data-testid={`message-${message.id}`}
+                >
+                  {!isOwnMessage && (
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {message.userName?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
 
-        <div className="border-t p-4">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Écrire un message..."
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              disabled={sending}
-              data-testid="input-message"
-              className="flex-1 h-12"
-            />
-            <Button
-              type="submit"
-              disabled={sending || !messageInput.trim()}
-              data-testid="button-send-message"
-              size="icon"
-              className="h-12 w-12"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </form>
+                  <div className={`max-w-[75%] sm:max-w-[70%] ${isOwnMessage ? "items-end" : "items-start"} flex flex-col gap-0.5`}>
+                    {!isOwnMessage && (
+                      <span className="text-xs font-medium text-muted-foreground px-2">
+                        {message.userName}
+                      </span>
+                    )}
+
+                    <div className="relative group">
+                      <div
+                        className={`px-3 py-2 rounded-lg shadow-sm ${
+                          isOwnMessage
+                            ? "bg-[#DCF8C6] dark:bg-[#005C4B] rounded-tr-none"
+                            : "bg-white dark:bg-[#202C33] rounded-tl-none"
+                        }`}
+                      >
+                        {messageType === "image" && imageUrl && (
+                          <img
+                            src={imageUrl}
+                            alt="Image"
+                            className="max-w-full max-h-64 sm:max-h-80 rounded-md mb-1 object-contain"
+                            data-testid={`image-${message.id}`}
+                          />
+                        )}
+                        
+                        {messageType === "audio" && audioUrl && (
+                          <audio
+                            controls
+                            src={audioUrl}
+                            className="max-w-full mb-1"
+                            data-testid={`audio-${message.id}`}
+                          >
+                            Votre navigateur ne supporte pas l'audio.
+                          </audio>
+                        )}
+                        
+                        {plainText && (
+                          <p className={`text-sm whitespace-pre-wrap break-words ${
+                            isOwnMessage ? "text-gray-900 dark:text-gray-100" : ""
+                          }`}>
+                            {plainText}
+                          </p>
+                        )}
+                        
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 float-right ml-2 mt-1">
+                          {message.timestamp.toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      
+                      {canEdit && (
+                        <div className={`absolute -top-1 ${isOwnMessage ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full mr-1"} opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5`}>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => handleEditMessage(message)}
+                            data-testid={`button-edit-message-${message.id}`}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => setDeletingMessageId(message.id)}
+                            data-testid={`button-delete-message-${message.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isOwnMessage && (
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {userProfile?.displayName?.charAt(0).toUpperCase() || "V"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              );
+            })
+          )}
+          <div ref={scrollRef} />
         </div>
-      </Card>
+      </ScrollArea>
+
+      {/* Input Area - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-background border-t p-2 sm:p-3 shadow-lg">
+        {/* Upload Progress */}
+        {uploading && (
+          <div className="mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-muted-foreground">
+                {uploadProgress < 100 ? "Envoi..." : "Terminé"}
+              </span>
+              <span className="text-xs font-medium">{uploadProgress}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-1.5" />
+          </div>
+        )}
+
+        {/* Recording Indicator */}
+        {recording && (
+          <div className="mb-2 flex items-center gap-2 text-destructive animate-pulse text-xs">
+            <MicOff className="h-3.5 w-3.5" />
+            <span className="font-medium">Enregistrement...</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 sm:gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+            data-testid="input-image-upload"
+          />
+
+          {/* Action Buttons */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || recording || sending}
+            data-testid="button-upload-image"
+          >
+            <ImageIcon className="h-5 w-5" />
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 ${
+              recording ? "text-destructive" : "text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={recording ? stopRecording : startRecording}
+            disabled={uploading || sending}
+            data-testid="button-voice-record"
+          >
+            {recording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </Button>
+
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              disabled={uploading || recording || sending}
+              data-testid="button-emoji-picker"
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+
+            {showEmojiPicker && (
+              <div className="fixed sm:absolute bottom-16 sm:bottom-full left-0 sm:left-auto right-0 sm:right-0 mb-0 sm:mb-2 z-50 flex justify-center sm:justify-end px-2 sm:px-0">
+                <div className="w-full sm:w-auto max-w-sm sm:max-w-none">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    width="100%"
+                    height={350}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Input
+            type="text"
+            placeholder="Message..."
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            disabled={sending || uploading || recording}
+            data-testid="input-message"
+            className="flex-1 h-9 sm:h-10 rounded-full bg-muted border-none"
+          />
+          
+          <Button
+            type="submit"
+            disabled={sending || !messageInput.trim() || uploading || recording}
+            data-testid="button-send-message"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10 rounded-full flex-shrink-0"
+          >
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+        </form>
+      </div>
 
       <Dialog open={!!editingMessage} onOpenChange={(open) => {
         if (!open) {

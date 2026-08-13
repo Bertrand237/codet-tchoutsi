@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, Link } from "wouter";
@@ -35,79 +36,80 @@ const menuItems = [
     title: "Tableau de bord",
     url: "/dashboard",
     icon: Home,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "celcom", "responsable_communication", "membre", "visiteur"],
   },
   {
     title: "Projets",
     url: "/projects",
     icon: FolderKanban,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "responsable_communication", "membre"],
   },
   {
     title: "Membres",
     url: "/members",
     icon: Users,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire"],
   },
   {
     title: "Budget",
     url: "/budget",
     icon: Wallet,
-    roles: ["admin", "président", "secretaire", "trésorier"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier"],
   },
   {
     title: "Calendrier",
     url: "/calendar",
     icon: BarChart3,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "responsable_communication", "membre"],
   },
   {
     title: "Votes",
     url: "/votes",
     icon: Video,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Paiements",
     url: "/payments",
     icon: CreditCard,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Recensement",
     url: "/census",
     icon: UsersRound,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "membre"],
   },
   {
     title: "Messagerie",
     url: "/chat",
     icon: MessageSquare,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "celcom", "responsable_communication", "membre"],
   },
   {
     title: "Blog",
     url: "/blog",
     icon: Newspaper,
-    roles: ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "celcom", "responsable_communication", "membre", "visiteur"],
   },
   {
     title: "Publicités",
     url: "/ads",
     icon: Video,
-    roles: ["admin", "président", "secretaire", "celcom"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "celcom", "responsable_communication"],
   },
   {
     title: "Statistiques",
     url: "/statistics",
     icon: BarChart3,
-    roles: ["admin", "président", "secretaire", "trésorier"],
+    roles: ["admin", "président", "secretaire", "secretaire_general", "trésorier"],
   },
 ];
 
 export function AppSidebar() {
   const { userProfile, signOut } = useAuth();
   const [location] = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const filteredItems = useMemo(() => {
     if (!userProfile) return [];
@@ -116,6 +118,12 @@ export function AppSidebar() {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
   
   if (!userProfile) {
@@ -148,7 +156,7 @@ export function AppSidebar() {
                     isActive={location === item.url}
                     data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    <Link href={item.url} className="flex items-center gap-3">
+                    <Link href={item.url} onClick={handleLinkClick} className="flex items-center gap-3">
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </Link>
@@ -161,7 +169,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <Link href="/profile">
+        <Link href="/profile" onClick={handleLinkClick}>
           <div className="flex items-center gap-3 mb-3 p-2 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors">
             <Avatar className="h-10 w-10">
               <AvatarImage src={userProfile?.photoURL} />

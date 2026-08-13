@@ -2,10 +2,33 @@
 
 Votre application CODET utilise Appwrite Cloud (gratuit) comme backend. Vous n'avez donc besoin que d'héberger le frontend React - **totalement gratuit** !
 
+## ⚠️ IMPORTANT : Mise à jour du schéma Appwrite AVANT déploiement
+
+**Nouvelles modifications** (20 novembre 2025) :
+- Nouveaux champs utilisateur : `gender`, `phoneNumber` (requis), `sousComite`, `pays`, `ville`
+- Nouveaux rôles : `secretaire_general`, `responsable_communication`
+- Nouveaux champs projets : `documentPDFUrl`, `preuveImages`
+
+### 🔧 Exécuter le script de migration Appwrite
+
+**Avant de déployer sur Netlify**, vous DEVEZ mettre à jour le schéma Appwrite :
+
+1. **Assurez-vous que `APPWRITE_API_KEY` est configuré dans vos secrets Replit**
+
+2. **Exécutez le script de migration** :
+   ```bash
+   npx tsx scripts/update-appwrite-schema.ts
+   ```
+
+3. **Vérifiez dans la console Appwrite** que les nouveaux attributs ont été ajoutés
+
+4. **Action manuelle requise** : Si l'attribut `email` était requis, vous devez le recréer comme optionnel via la console Appwrite
+
 ## ✅ Prérequis
 - Compte GitHub (gratuit)
 - Votre code sur GitHub
 - Les 3 variables d'environnement Appwrite
+- Schéma Appwrite mis à jour (voir ci-dessus)
 
 ## 📱 Option 1 : Netlify (Recommandé - Le Plus Simple)
 

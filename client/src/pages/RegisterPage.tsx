@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Check, Search } from "lucide-react";
 import { directoryMembers, type DirectoryMember } from "@shared/directory";
@@ -140,13 +141,12 @@ export default function RegisterPage() {
                   value={profession}
                   onChange={(e) => setProfession(e.target.value)}
                   data-testid="input-profession"
-                  className="h-12"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12"
+                className="w-full"
                 disabled={loading}
                 data-testid="button-register"
               >

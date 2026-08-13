@@ -90,7 +90,7 @@ export default function MembersPage() {
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
       member.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (member.email || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === "tous" || member.role === roleFilter;
 
@@ -369,8 +369,12 @@ export default function MembersPage() {
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="président">Président</SelectItem>
+                    <SelectItem value="secretaire">Secrétaire</SelectItem>
+                    <SelectItem value="secretaire_general">Secrétaire Général</SelectItem>
                     <SelectItem value="trésorier">Trésorier</SelectItem>
                     <SelectItem value="commissaire">Commissaire</SelectItem>
+                    <SelectItem value="celcom">Chargé de Communication (CELCOM)</SelectItem>
+                    <SelectItem value="responsable_communication">Responsable Communication</SelectItem>
                     <SelectItem value="membre">Membre</SelectItem>
                     <SelectItem value="visiteur">Visiteur</SelectItem>
                   </SelectContent>

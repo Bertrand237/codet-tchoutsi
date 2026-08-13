@@ -1,18 +1,26 @@
 import { z } from "zod";
 
 // User roles
-export const userRoles = ["admin", "président", "secretaire", "trésorier", "commissaire", "celcom", "membre", "visiteur"] as const;
+export const userRoles = ["admin", "président", "secretaire", "secretaire_general", "trésorier", "commissaire", "celcom", "responsable_communication", "membre", "visiteur"] as const;
 export type UserRole = typeof userRoles[number];
+
+// Gender options
+export const genderOptions = ["monsieur", "madame"] as const;
+export type Gender = typeof genderOptions[number];
 
 // User schema
 export const userSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
+  email: z.string().email().optional(),
   displayName: z.string(),
+  gender: z.enum(genderOptions),
+  phoneNumber: z.string(),
+  sousComite: z.string().optional(),
+  pays: z.string().optional(),
+  ville: z.string().optional(),
   role: z.enum(userRoles),
   profession: z.string().optional(),
   photoURL: z.string().optional(),
-  phoneNumber: z.string().optional(),
   directoryId: z.string().optional(),
   mustChangePassword: z.boolean().optional(),
   createdAt: z.date(),
@@ -76,11 +84,17 @@ export const insertFamilySchema = familySchema.omit({ id: true, createdAt: true,
 export type InsertFamily = z.infer<typeof insertFamilySchema>;
 
 // Message schema (chat)
+export const messageTypes = ["text", "image", "audio"] as const;
+export type MessageType = typeof messageTypes[number];
+
 export const messageSchema = z.object({
   id: z.string(),
   userId: z.string(),
   userName: z.string(),
   text: z.string(),
+  messageType: z.enum(messageTypes).default("text"),
+  imageUrl: z.string().optional(),
+  audioUrl: z.string().optional(),
   timestamp: z.date(),
 });
 
@@ -165,6 +179,8 @@ export const projectSchema = z.object({
   membresAssignes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   progression: z.number().min(0).max(100).optional(), // 0-100%
+  documentPDFUrl: z.string().optional(),
+  preuveImages: z.array(z.string()).optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

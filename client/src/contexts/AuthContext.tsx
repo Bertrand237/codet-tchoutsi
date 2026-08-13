@@ -1,16 +1,29 @@
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { account, databases, DATABASE_ID, COLLECTIONS } from "@/lib/appwrite";
 import { ID, Models, Query } from "appwrite";
-import type { User, UserRole } from "@shared/schema";
+import type { User, UserRole, Gender } from "@shared/schema";
 import type { DirectoryMember } from "@shared/directory";
 import { directoryEmail } from "@shared/directory";
+import { generatePhoneAlias, normalizePhoneNumber } from "@/lib/phoneUtils";
+
+interface SignUpData {
+  email?: string;
+  password: string;
+  displayName: string;
+  gender: Gender;
+  phoneNumber: string;
+  sousComite?: string;
+  pays?: string;
+  ville?: string;
+  profession?: string;
+}
 
 interface AuthContextType {
   currentUser: Models.User<Models.Preferences> | null;
   userProfile: User | null;
   loading: boolean;
   signIn: (identifier: string, password: string) => Promise<{ requiresPasswordChange: boolean }>;
-  signUp: (email: string, password: string, displayName: string, role?: UserRole, profession?: string) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   signUpFromDirectory: (member: DirectoryMember) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -61,35 +74,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { requiresPasswordChange: profile.mustChangePassword === true };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string, role: UserRole = "membre", profession?: string) => {
+  const signUp = useCallback(async (data: SignUpData) => {
     try {
+      const userId = ID.unique();
+      // Normaliser le numéro de téléphone
+      const normalizedPhone = normalizePhoneNumber(data.phoneNumber);
+      // Utiliser le numéro de téléphone normalisé pour générer un email alias si pas d'email
+      const emailForAuth = data.email || generatePhoneAlias(normalizedPhone);
+
       // Créer le compte utilisateur
-      const user = await account.create(ID.unique(), email, password, displayName);
-      
+      const user = await account.create(userId, emailForAuth, data.password, data.displayName);
+
       // Se connecter immédiatement pour avoir les permissions
-      await account.createEmailPasswordSession(email, password);
-      
+      await account.createEmailPasswordSession(emailForAuth, data.password);
+
       // Vérifier si c'est le premier utilisateur
       const usersListResponse = await databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS);
       const isFirstUser = usersListResponse.total === 0;
-      
+
       // Le premier utilisateur devient automatiquement admin, les autres sont membres
-      const finalRole = isFirstUser ? "admin" : "membre";
+      const finalRole: UserRole = isFirstUser ? "admin" : "membre";
+      
+      // Toujours stocker l'email utilisé pour l'authentification
+      const profileEmail = data.email || emailForAuth;
       
       const userProfile = {
-        email,
-        displayName,
+        email: profileEmail,
+        displayName: data.displayName,
+        gender: data.gender,
+        phoneNumber: normalizedPhone,
+        sousComite: data.sousComite,
+        pays: data.pays,
+        ville: data.ville,
         role: finalRole,
         mustChangePassword: false,
-        ...(profession && { profession }),
+        profession: data.profession,
         createdAt: new Date().toISOString(),
       };
 
-      // Créer le profil utilisateur dans la base de données (maintenant qu'on est connecté)
+      // Créer le profil utilisateur dans la base de données
       await databases.createDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id, userProfile);
       
-      // Rediriger vers le dashboard et laisser le useEffect charger l'utilisateur
-      window.location.href = '/dashboard';
+      // Mettre à jour l'état immédiatement
+      setCurrentUser(user);
+      setUserProfile({
+        id: user.$id,
+        email: profileEmail,
+        displayName: data.displayName,
+        gender: data.gender,
+        phoneNumber: normalizedPhone,
+        sousComite: data.sousComite,
+        pays: data.pays,
+        ville: data.ville,
+        role: finalRole,
+        profession: data.profession,
+        createdAt: new Date(),
+      });
     } catch (error: any) {
       console.error("Erreur d'inscription:", error?.message || error);
       throw new Error(error?.message || error?.type || "Erreur lors de l'inscription");
@@ -155,14 +195,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userDoc = await databases.getDocument(DATABASE_ID, COLLECTIONS.USERS, user.$id);
           setUserProfile({
             id: user.$id,
-            email: userDoc.email,
+            email: userDoc.email || undefined,
             displayName: userDoc.displayName,
-            role: userDoc.role,
-            profession: userDoc.profession,
-            photoURL: userDoc.photoURL,
+            gender: userDoc.gender,
             phoneNumber: userDoc.phoneNumber,
             directoryId: userDoc.directoryId,
             mustChangePassword: userDoc.mustChangePassword === true,
+            sousComite: userDoc.sousComite || undefined,
+            pays: userDoc.pays || undefined,
+            ville: userDoc.ville || undefined,
+            role: userDoc.role,
+            profession: userDoc.profession || undefined,
+            photoURL: userDoc.photoURL || undefined,
             createdAt: new Date(userDoc.createdAt),
           });
         } catch (error) {

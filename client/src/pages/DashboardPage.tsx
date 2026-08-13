@@ -5,6 +5,7 @@ import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, Trend
 import type { Statistics } from "@shared/schema";
 import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { collection, getDocs, query, where, orderBy, limit, db, toDate } from '@/lib/firebase-compat';
+import AdsCarousel from "@/components/AdsCarousel";
 
 export default function DashboardPage() {
   const { userProfile } = useAuth();
@@ -219,6 +220,9 @@ export default function DashboardPage() {
           Voici un aperçu de l'activité du comité CODET
         </p>
       </div>
+
+      {/* Carrousel de publicités vidéo */}
+      <AdsCarousel />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat, index) => (

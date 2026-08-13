@@ -28,9 +28,8 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
-        description: error.message || "Email ou mot de passe incorrect",
+        description: error.message || "Identifiants incorrects",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -50,7 +49,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">Connexion</CardTitle>
             <CardDescription>
-              Connectez-vous à votre compte pour accéder à l'application
+              Connectez-vous avec votre email ou numéro de téléphone
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -80,13 +79,13 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     data-testid="input-password"
-                    className="h-12 pr-12"
+                    className="pr-12"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1 h-10 w-10"
+                    className="absolute right-1 top-1 h-8 w-8"
                     onClick={() => setShowPassword(!showPassword)}
                     data-testid="button-toggle-password"
                   >
@@ -97,7 +96,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12"
+                className="w-full"
                 disabled={loading}
                 data-testid="button-login"
               >

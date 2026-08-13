@@ -252,6 +252,23 @@ export async function deleteObject(fileRef: { bucket: string; fileId: string }) 
   await appwriteStorage.deleteFile(fileRef.bucket, fileRef.fileId);
 }
 
+// Simplified upload function that returns file ID directly
+// Note: path parameter is used as a prefix in the file ID to organize files virtually
+export async function uploadFile(path: string, file: File): Promise<string> {
+  // Create a unique ID that includes the path as a prefix for organization
+  // This helps organize files in the single Appwrite bucket (free tier limitation)
+  const sanitizedPath = path.replace(/\//g, '_');
+  const fileId = `${sanitizedPath}_${ID.unique()}`;
+  const uploadResult = await appwriteStorage.createFile(STORAGE_BUCKET_ID, fileId, file);
+  return uploadResult.$id;
+}
+
+// Simplified function to get file URL
+export async function getFileUrl(fileId: string): Promise<string> {
+  const result = appwriteStorage.getFileView(STORAGE_BUCKET_ID, fileId);
+  return result.toString();
+}
+
 // ==================== Real-time Subscriptions ====================
 
 export function onSnapshot(
