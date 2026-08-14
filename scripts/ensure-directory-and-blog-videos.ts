@@ -1,8 +1,9 @@
+import { pathToFileURL } from "node:url";
 import { Client, Databases, Permission, Role } from "node-appwrite";
 
 const client = new Client()
   .setEndpoint(process.env.VITE_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1")
-  .setProject(process.env.VITE_APPWRITE_PROJECT_ID || "")
+  .setProject(process.env.VITE_APPWRITE_PROJECT_ID || "68fceae4001cf61101d4")
   .setKey(process.env.APPWRITE_API_KEY || "");
 
 const databases = new Databases(client);
@@ -81,7 +82,7 @@ async function ensureBlogVideosCollection() {
   await ensurePublicContentPermissions("blog-videos");
 }
 
-async function main() {
+export async function upgradeAppwriteContent() {
   if (!process.env.APPWRITE_API_KEY) {
     throw new Error("APPWRITE_API_KEY est requis pour appliquer la mise à niveau Appwrite.");
   }
@@ -94,7 +95,9 @@ async function main() {
   console.log("Mise à niveau terminée.");
 }
 
-main().catch((error) => {
-  console.error("Échec de la mise à niveau Appwrite :", error?.message || error);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  upgradeAppwriteContent().catch((error) => {
+    console.error("Échec de la mise à niveau Appwrite :", error?.message || error);
+    process.exit(1);
+  });
+}

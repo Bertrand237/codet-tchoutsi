@@ -103,17 +103,21 @@ Variables d'environnement requises :
 
 6. **Déployer le code frontend** :
    - Push vers GitHub
-   - Netlify déploie automatiquement
+   - Appwrite Sites déclenche le déploiement du site
 
 ## 🚨 Sécurité
 
 - **Ne jamais commit** la clé API Appwrite dans le code
 - Utiliser uniquement des variables d'environnement
 - La clé API est uniquement pour les migrations côté serveur
-- Sur Netlify, n'ajouter QUE les variables `VITE_*`
+- Dans Appwrite Sites, n'ajouter que les variables `VITE_*`
+- Pour synchroniser les variables et les permissions :
+  ```bash
+  npm run appwrite:configure
+  ```
 
 ## 📚 Ressources
 
 - [Documentation Appwrite Databases](https://appwrite.io/docs/databases)
-- [Guide de migration](../DEPLOIEMENT.md)
+- [Guide Appwrite Sites](../APPWRITE-SITES-SETUP.md)
 - [Schéma TypeScript](../shared/schema.ts)

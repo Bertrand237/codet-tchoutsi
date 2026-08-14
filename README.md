@@ -148,24 +148,16 @@ VITE_APPWRITE_DATABASE_ID=codet-db
 
 L'application peut être déployée **sans aucun frais** sur :
 
-### Option 1 : Netlify (Recommandé)
+### Appwrite Sites (recommandé)
 
 ```bash
-# Build de production
 npm run build
-
-# Déploiement automatique via GitHub
-# Voir GITHUB-SETUP.md pour le guide complet
+# Configuration Appwrite du site et des permissions
+npm run appwrite:configure
 ```
 
-### Autres Options Gratuites
-- **Vercel** - Performances excellentes
-- **Cloudflare Pages** - Bande passante illimitée
-- **Render** - Simple et efficace
-
 ### Guides Détaillés
-- 📖 [Guide Complet de Déploiement](./DEPLOIEMENT.md)
-- 🚀 [Setup GitHub + Netlify Pas à Pas](./GITHUB-SETUP.md)
+- 📖 [Guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
 
 ## 📂 Structure du Projet
 
@@ -201,10 +193,8 @@ codet-tchoutsi/
 ├── scripts/
 │   └── init-appwrite.ts    # Script d'initialisation
 ├── server/                 # Express minimal (sert le frontend)
-├── DEPLOIEMENT.md          # Guide déploiement détaillé
-├── GITHUB-SETUP.md         # Guide GitHub + Netlify
-├── netlify.toml            # Config Netlify
-├── vercel.json             # Config Vercel
+├── APPWRITE-SITES-SETUP.md # Guide Appwrite Sites
+├── vercel.json             # Config Vercel historique
 └── .env.example            # Modèle variables d'env
 ```
 
@@ -269,7 +259,7 @@ codet-tchoutsi/
 
 | Service | Plan | Coût Mensuel |
 |---------|------|-------------|
-| **Frontend** (Netlify/Vercel) | Free Tier | **0€** ✅ |
+| **Frontend** (Appwrite Sites) | Free Tier | **0€** ✅ |
 | **Backend** (Appwrite Cloud) | Free Tier | **0€** ✅ |
 | **Domaine** (optionnel) | - | ~10€/an |
 | **TOTAL** | - | **0€/mois** 🎉 |
@@ -306,16 +296,15 @@ npm run check            # Vérification TypeScript
 
 ## 📖 Documentation
 
-- [📘 Guide de Déploiement Complet](./DEPLOIEMENT.md)
-- [🚀 Setup GitHub + Netlify](./GITHUB-SETUP.md)
+- [📘 Guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
 - [📄 Architecture Technique](./replit.md)
 - [🔗 Documentation Appwrite](https://appwrite.io/docs)
 
 ## 🎯 Prochaines Étapes
 
-1. **Pousser le code sur GitHub** - Voir [GITHUB-SETUP.md](./GITHUB-SETUP.md)
-2. **Déployer sur Netlify** - 100% gratuit, 5 minutes
-3. **Configurer le domaine** - Optionnel
+1. **Pousser le code sur GitHub**
+2. **Créer le site dans Appwrite Sites**
+3. **Exécuter `npm run appwrite:configure`**
 4. **Inviter les membres** - Commencer à utiliser !
 
 ## 🤝 Contribution
@@ -332,8 +321,8 @@ Les contributions sont les bienvenues ! Pour contribuer :
 
 Pour toute question ou problème :
 
-1. Consultez la [documentation de déploiement](./DEPLOIEMENT.md)
-2. Vérifiez le [guide GitHub](./GITHUB-SETUP.md)
+1. Consultez le [guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
+2. Vérifiez les variables et permissions dans Appwrite Console
 3. Lisez la [documentation Appwrite](https://appwrite.io/docs)
 4. Consultez [replit.md](./replit.md) pour l'architecture
 
@@ -346,7 +335,7 @@ MIT License - Libre d'utilisation et de modification
 - ❤️ Par et pour le Comité de Développement Tchoutsi
 - ⚡ Powered by [Appwrite Cloud](https://appwrite.io)
 - 🎨 Design System: [Shadcn UI](https://ui.shadcn.com)
-- 🚀 Hébergement: [Netlify](https://netlify.com) (gratuit)
+- 🚀 Hébergement: [Appwrite Sites](https://appwrite.io/products/sites)
 - 🛠️ Build: [Vite](https://vitejs.dev)
 
 ## 🙏 Crédits
@@ -367,7 +356,5 @@ MIT License - Libre d'utilisation et de modification
 **CODET** - Moderniser la gestion communautaire avec la technologie 🚀
 
 *Entièrement gratuit et open-source*
-
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
 
 </div>
