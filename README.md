@@ -1,360 +1,151 @@
-# 🏛️ CODET - Comité de Développement Tchoutsi
+# codet-migration-pack
 
-![CODET](https://img.shields.io/badge/CODET-Community%20Management-0A7D33?style=for-the-badge)
-![Appwrite](https://img.shields.io/badge/Appwrite-Cloud-F02E65?style=for-the-badge&logo=appwrite)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript)
+Pack complet pour migrer **codet-tchoutsi** de Replit vers **GitHub Codespaces + Appwrite Sites** avec automatisation totale.
 
-Application web complète de gestion pour le Comité de Développement Tchoutsi. Une solution moderne et intuitive pour gérer l'administration, les finances, les projets et la communication du comité.
+## 🎯 Ce que fait ce pack
 
-## ✨ Fonctionnalités
+À chaque `git push` sur la branche `main`, le workflow GitHub Actions exécute automatiquement :
 
-### 🔐 Authentification & Rôles
-- **6 niveaux de rôles** : Admin, Président, Trésorier, Commissaire, Membre, Visiteur
-- Système de permissions granulaire
-- Premier utilisateur = Admin automatique
-- Gestion de profils avec photo
+1. **Build & type-check** du frontend
+2. **Configuration Appwrite Console** :
+   - Crée la database `codet-db` si elle n'existe pas
+   - Crée les **12 collections** avec tous leurs attributs
+   - Configure les permissions (publique pour blog/ads, privée pour le reste)
+   - Crée les **4 buckets** de stockage
+3. **Configuration Appwrite Sites** :
+   - Met à jour les variables `VITE_APPWRITE_*` sur le site
+   - Déclenche un nouveau déploiement
+4. **Création des 839 profils utilisateurs** depuis l'annuaire Tchoutsi
 
-### 📊 Tableau de Bord
-- Statistiques en temps réel
-- Graphiques interactifs (Recharts : pie, line, bar)
-- Vue d'ensemble complète des activités
-- Métriques de performance
+Le tout est **idempotent** : relancer le workflow ne crée pas de doublons.
 
-### 💰 Gestion Financière
-- **Paiements** : Enregistrement, validation, preuves (upload), exports PDF/CSV
-- **Budget** : Suivi des revenus/dépenses, calcul automatique du solde
-- Statistiques financières détaillées
-- Traçabilité complète
+## 📦 Contenu
 
-### 👥 Gestion des Membres
-- Administration complète des utilisateurs
-- Modification des rôles
-- Vues détaillées des profils
-- Export CSV des membres
+```
+codet-migration-pack/
+├── package.json                              # Dépendances nettoyées (sans Replit)
+├── vite.config.ts                            # Config Vite propre
+├── .env.example                              # Variables d'env documentées
+├── .gitignore                                # Exclut artefacts Replit + secrets
+├── appwrite.json                             # Config CLI Appwrite
+├── SETUP.md                                  # ⭐ Guide complet (30 min chrono)
+├── apply-migration.sh                        # Script d'application auto
+│
+├── .devcontainer/
+│   └── devcontainer.json                     # Config GitHub Codespaces
+│
+├── .github/workflows/
+│   ├── ci.yml                                # CI: build + type-check
+│   └── setup-appwrite.yml                    # Setup complet Appwrite (auto)
+│
+├── client/public/
+│   └── _redirects                            # Fallback SPA pour Appwrite Sites
+│
+└── scripts/
+    ├── setup-appwrite.ts                     # Database + 12 collections + 4 buckets
+    ├── seed-directory.ts                     # Crée les 839 profils
+    ├── configure-site.ts                     # Configure vars site Appwrite Sites
+    ├── bootstrap.ts                          # Orchestrateur (1 commande)
+    ├── configure-appwrite.ts                 # (legacy) Configure vars + collections
+    └── ensure-directory-and-blog-videos.ts   # (legacy) Vérifie collections
+```
 
-### 📁 Gestion de Projets
-- Création et suivi de projets
-- Gestion du statut, budget, progression
-- Attribution de responsables
-- Priorités et échéances
-- Exports PDF/CSV
+## 🚀 Démarrage rapide
 
-### 📅 Calendrier d'Événements
-- Vues multiples : Mois, Semaine, Jour, Agenda
-- Bibliothèque react-big-calendar
-- Localisation française complète
-- Export CSV des événements
-
-### 🗳️ Système de Vote
-- Création de sondages (Admin/Président)
-- Options multiples
-- Résultats en temps réel
-- Vote sécurisé et anonyme
-
-### 👨‍👩‍👧‍👦 Recensement Familial
-- Gestion complète des familles
-- Informations détaillées des membres
-- Suivi démographique
-- Historique complet
-
-### 💬 Chat en Temps Réel
-- Messagerie de groupe instantanée
-- Abonnements Appwrite Real-time
-- Communication fluide entre membres
-- Interface moderne type WhatsApp
-
-### 📝 Blog Public
-- Gestion d'articles (brouillon/publié)
-- Upload d'images
-- Extraits et dates de publication
-- Visible par tous, géré par admin/président
-
-### 📺 Publicités Vidéo
-- Upload de vidéos promotionnelles
-- **Barre de progression en temps réel** lors de l'upload
-- Gestion des annonces (activer/désactiver)
-- Contrôle de l'affichage
-
-### 👤 Profils Utilisateurs
-- Visualisation complète du profil
-- Modification du nom d'affichage
-- **Upload de photo de profil avec progression**
-- Descriptions des privilèges par rôle
-- Historique d'activité
-
-## 🛠️ Stack Technique
-
-### Frontend
-- **React 18** avec TypeScript
-- **Wouter** - Routing léger et performant
-- **Shadcn UI** + **Tailwind CSS** - Interface utilisateur moderne
-- **TanStack Query v5** - Gestion d'état et cache
-- **Recharts** - Visualisation de données
-- **react-big-calendar** - Calendrier événementiel
-- **Framer Motion** - Animations fluides
-- **jsPDF** - Génération de rapports PDF
-
-### Backend (100% Gratuit)
-- **Appwrite Cloud** (https://fra.cloud.appwrite.io/v1)
-  - Authentication (email/password)
-  - Database (11 collections)
-  - Storage (bucket unique avec dossiers virtuels)
-  - Real-time subscriptions
-  - Aucun coût, 75k utilisateurs/mois, 2GB storage, 10GB bandwidth
-
-### Design
-- Thème vert personnalisé (#0A7D33)
-- Mode sombre complet
-- Interface responsive
-- Accessibilité (data-testid sur tous les éléments)
-- Animations et transitions élégantes
-
-## 🚀 Démarrage Rapide
-
-### Prérequis
-- Node.js 20+
-- Compte Appwrite Cloud (gratuit - https://cloud.appwrite.io)
-
-### Installation
+### 1. Appliquer les fichiers au dépôt
 
 ```bash
-# Cloner le dépôt
-git clone https://github.com/votre-nom/codet-tchoutsi.git
+git clone https://github.com/Bertrand237/codet-tchoutsi.git
 cd codet-tchoutsi
-
-# Installer les dépendances
-npm install
-
-# Configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos clés Appwrite
-
-# Lancer en développement
-npm run dev
+bash /chemin/vers/codet-migration-pack/apply-migration.sh
 ```
 
-L'application sera accessible sur `http://localhost:5000`
+### 2. Suivre le guide de configuration
 
-### Variables d'Environnement
+Ouvre **`SETUP.md`** — il détaille les 8 étapes pour configurer :
+- La clé API Appwrite
+- Les secrets et variables GitHub
+- Le site Appwrite Sites
+- Le domaine dans Auth
 
-```env
-VITE_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
-VITE_APPWRITE_PROJECT_ID=votre-project-id
-VITE_APPWRITE_DATABASE_ID=codet-db
-```
+**Temps total : ~30 minutes**
 
-## 📦 Déploiement (100% Gratuit)
-
-L'application peut être déployée **sans aucun frais** sur :
-
-### Appwrite Sites (recommandé)
+### 3. Pousser sur GitHub
 
 ```bash
-npm run build
-# Configuration Appwrite du site et des permissions
-npm run appwrite:configure
+git add .
+git commit -m "Migration Codespaces + Appwrite + GitHub Actions"
+git push origin main
 ```
 
-### Guides Détaillés
-- 📖 [Guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
+Le workflow GitHub Actions se lance automatiquement et configure tout.
 
-## 📂 Structure du Projet
+## 🛠️ Commandes utiles
+
+| Commande | Rôle | Quand l'utiliser |
+|---|---|---|
+| `npm run dev` | Démarre Vite en dev (HMR sur :5173) | Dev local |
+| `npm run build` | Build de prod → `dist/public/` | Avant push |
+| `npm run check` | Vérification TypeScript | Avant push |
+| `npm run appwrite:setup` | Configure database + collections + buckets | Manuel si besoin |
+| `npm run appwrite:seed` | Crée les 839 profils | Manuel si besoin |
+| `npm run appwrite:site` | Configure vars du site | Manuel si besoin |
+| `npm run appwrite:bootstrap` | Tout faire en une commande | Setup initial local |
+
+> En production, GitHub Actions s'occupe de tout. Ces commandes sont pour le local.
+
+## 📊 Schéma d'automatisation
 
 ```
-codet-tchoutsi/
-├── client/
-│   ├── src/
-│   │   ├── components/     # Composants UI réutilisables
-│   │   │   ├── ui/         # Shadcn UI components
-│   │   │   └── app-sidebar.tsx
-│   │   ├── contexts/       # Contextes React (Auth)
-│   │   ├── hooks/          # Hooks personnalisés
-│   │   ├── lib/            # Utilitaires
-│   │   │   ├── appwrite.ts           # Config Appwrite
-│   │   │   ├── firebase-compat.ts    # Wrapper Appwrite
-│   │   │   └── queryClient.ts
-│   │   ├── pages/          # Pages de l'application (11 pages)
-│   │   │   ├── DashboardPage.tsx
-│   │   │   ├── PaymentsPage.tsx
-│   │   │   ├── MembersPage.tsx
-│   │   │   ├── BudgetPage.tsx
-│   │   │   ├── ProjectsPage.tsx
-│   │   │   ├── VotesPage.tsx
-│   │   │   ├── CalendarPage.tsx
-│   │   │   ├── ChatPage.tsx
-│   │   │   ├── BlogPage.tsx
-│   │   │   ├── AdsPage.tsx
-│   │   │   ├── CensusPage.tsx
-│   │   │   └── ProfilePage.tsx
-│   │   └── App.tsx         # Point d'entrée + routing
-├── shared/
-│   └── schema.ts           # Schémas TypeScript
-├── scripts/
-│   └── init-appwrite.ts    # Script d'initialisation
-├── server/                 # Express minimal (sert le frontend)
-├── APPWRITE-SITES-SETUP.md # Guide Appwrite Sites
-├── vercel.json             # Config Vercel historique
-└── .env.example            # Modèle variables d'env
+┌─────────────────────────────────────────────────────────────┐
+│  git push origin main                                        │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ▼
+        GitHub Actions
+        ┌──────────────────────────────────────┐
+        │  Workflow 1: CI                       │
+        │   - npm ci                             │
+        │   - npm run check                      │
+        │   - npm run build                      │
+        └──────────────────────────────────────┘
+        ┌──────────────────────────────────────┐
+        │  Workflow 2: Setup Appwrite            │
+        │   - npm ci                             │
+        │   - npm run check                      │
+        │   - npm run build                      │
+        │   - npm run appwrite:setup             │
+        │     → Database + 12 collections        │
+        │     → 4 buckets                        │
+        │   - npm run appwrite:site              │
+        │     → Variables du site MAJ             │
+        │     → Déploiement déclenché            │
+        │   - npm run appwrite:seed              │
+        │     → 839 profils utilisateurs créés   │
+        └──────────────────────────────────────┘
+                 │
+                 ▼
+        Appwrite Console
+        ┌──────────────────────────────────────┐
+        │  Database: codet-db                    │
+        │  Collections: 12 (users, projects, …)  │
+        │  Buckets: 4                            │
+        │  Auth: 839 utilisateurs                │
+        │  Sites: déployé avec bonnes variables │
+        └──────────────────────────────────────┘
 ```
 
-## 🗄️ Base de Données Appwrite
+## ✅ Avantages vs Replit
 
-### Collections (11)
+| Critère | Replit | Après migration |
+|---|---|---|
+| Hébergement | Replit Deploys | Appwrite Sites (gratuit) |
+| CI/CD | Aucune | GitHub Actions automatisée |
+| Setup base de données | Manuel | Automatique au push |
+| Création utilisateurs | Manuel | Automatique (839 profils) |
+| Coût mensuel | Replit Free limité | **0 €** |
+| IDE | Replit (restrictif) | GitHub Codespaces (VS Code) |
 
-| Collection | Description | Attributs Clés |
-|------------|-------------|----------------|
-| **users** | Profils utilisateurs | role, displayName, photoURL |
-| **projects** | Gestion de projets | status, priority, budget, progress |
-| **payments** | Paiements et validations | userId, userName, amount, status |
-| **budget** | Suivi budgétaire | type (revenue/expense), amount |
-| **events** | Événements calendrier | title, startDate, endDate, type |
-| **polls** | Sondages/votes | question, options, createdBy |
-| **votes** | Votes individuels | pollId, userId, optionIndex |
-| **families** | Recensement familial | familyName, members (JSON) |
-| **messages** | Messages chat | userId, userName, text |
-| **blog-posts** | Articles blog | title, content, isPublished |
-| **ads** | Publicités vidéo | title, videoUrl, isActive |
+## 🆘 Problèmes fréquents
 
-### Storage Appwrite
-
-- **Bucket unique** : `payment-proofs`
-- **Dossiers virtuels** :
-  - `payments/` - Preuves de paiement (PDF, images)
-  - `blog/` - Images d'articles
-  - `ads/` - Vidéos publicitaires
-  - `profiles/` - Photos de profil
-
-## 🔒 Sécurité
-
-- ✅ Règles de permissions Appwrite complètes
-- ✅ Contrôle d'accès basé sur les rôles (RBAC)
-- ✅ Validation côté serveur (Appwrite)
-- ✅ Authentification sécurisée
-- ✅ Stockage sécurisé des fichiers
-- ✅ Protection CSRF
-- ✅ HTTPS obligatoire en production
-
-## 📊 Permissions par Rôle
-
-| Fonctionnalité | Admin | Président | Trésorier | Commissaire | Membre | Visiteur |
-|----------------|:-----:|:---------:|:---------:|:-----------:|:------:|:--------:|
-| Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Gestion membres | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Voir paiements | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Créer paiement | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Valider paiement | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| Budget | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Projets | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Calendrier | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Créer sondage | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Voter | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Recensement | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Messagerie | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Lire blog | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Gérer blog | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Publicités | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-
-## 🌍 Coût d'Hébergement
-
-| Service | Plan | Coût Mensuel |
-|---------|------|-------------|
-| **Frontend** (Appwrite Sites) | Free Tier | **0€** ✅ |
-| **Backend** (Appwrite Cloud) | Free Tier | **0€** ✅ |
-| **Domaine** (optionnel) | - | ~10€/an |
-| **TOTAL** | - | **0€/mois** 🎉 |
-
-**Aucun frais d'hébergement ! Application 100% gratuite.**
-
-## 🔧 Scripts npm
-
-```bash
-npm run dev              # Serveur de développement (localhost:5000)
-npm run build            # Build de production (dist/public/)
-npm run start            # Serveur de production
-npm run check            # Vérification TypeScript
-```
-
-## 📱 Pages de l'Application
-
-| Route | Description | Accès |
-|-------|-------------|-------|
-| `/login` | Connexion | Public |
-| `/register` | Inscription | Public |
-| `/` | Tableau de bord | Authentifié |
-| `/payments` | Gestion paiements | Membre+ |
-| `/members` | Gestion membres | Commissaire+ |
-| `/budget` | Suivi budget | Trésorier+ |
-| `/projects` | Projets | Membre+ |
-| `/calendar` | Calendrier | Membre+ |
-| `/votes` | Sondages | Membre+ |
-| `/census` | Recensement | Membre+ |
-| `/chat` | Messagerie | Membre+ |
-| `/blog` | Blog | Visiteur+ |
-| `/ads` | Publicités | Admin/Président |
-| `/profile` | Profil utilisateur | Authentifié |
-
-## 📖 Documentation
-
-- [📘 Guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
-- [📄 Architecture Technique](./replit.md)
-- [🔗 Documentation Appwrite](https://appwrite.io/docs)
-
-## 🎯 Prochaines Étapes
-
-1. **Pousser le code sur GitHub**
-2. **Créer le site dans Appwrite Sites**
-3. **Exécuter `npm run appwrite:configure`**
-4. **Inviter les membres** - Commencer à utiliser !
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Pour contribuer :
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commit les changements (`git commit -m 'Ajout nouvelle fonctionnalité'`)
-4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrir une Pull Request
-
-## 🆘 Support
-
-Pour toute question ou problème :
-
-1. Consultez le [guide Appwrite Sites](./APPWRITE-SITES-SETUP.md)
-2. Vérifiez les variables et permissions dans Appwrite Console
-3. Lisez la [documentation Appwrite](https://appwrite.io/docs)
-4. Consultez [replit.md](./replit.md) pour l'architecture
-
-## 📄 Licence
-
-MIT License - Libre d'utilisation et de modification
-
-## 👨‍💻 Développé avec
-
-- ❤️ Par et pour le Comité de Développement Tchoutsi
-- ⚡ Powered by [Appwrite Cloud](https://appwrite.io)
-- 🎨 Design System: [Shadcn UI](https://ui.shadcn.com)
-- 🚀 Hébergement: [Appwrite Sites](https://appwrite.io/products/sites)
-- 🛠️ Build: [Vite](https://vitejs.dev)
-
-## 🙏 Crédits
-
-- **Framework** : React 18 + TypeScript
-- **UI Components** : Shadcn UI + Radix UI
-- **Styling** : Tailwind CSS
-- **Backend** : Appwrite Cloud
-- **Icons** : Lucide React
-- **Charts** : Recharts
-- **Calendar** : react-big-calendar
-- **PDF Generation** : jsPDF
-
----
-
-<div align="center">
-
-**CODET** - Moderniser la gestion communautaire avec la technologie 🚀
-
-*Entièrement gratuit et open-source*
-
-</div>
+Voir la section « Dépannage » dans **`SETUP.md`**.
