@@ -2,6 +2,8 @@
 
 Pack complet pour migrer **codet-tchoutsi** de Replit vers **GitHub Codespaces + Appwrite Sites** avec automatisation totale.
 
+(Commit automatique pour déclencher la CI via GitHub Actions — action initiée par GitHub Copilot)
+
 ## 🎯 Ce que fait ce pack
 
 À chaque `git push` sur la branche `main`, le workflow GitHub Actions exécute automatiquement :
@@ -36,7 +38,7 @@ codet-migration-pack/
 │
 ├── .github/workflows/
 │   ├── ci.yml                                # CI: build + type-check
-│   └── setup-appwrite.yml                    # Setup complet Appwrite (auto)
+│   └── setup-appwrite.yml                    # Setup complet Appwrite (manual + DRY_RUN)
 │
 ├── client/public/
 │   └── _redirects                            # Fallback SPA pour Appwrite Sites
@@ -49,6 +51,7 @@ codet-migration-pack/
     ├── configure-appwrite.ts                 # (legacy) Configure vars + collections
     └── ensure-directory-and-blog-videos.ts   # (legacy) Vérifie collections
 ```
+
 
 ## 🚀 Démarrage rapide
 
@@ -80,72 +83,7 @@ git push origin main
 
 Le workflow GitHub Actions se lance automatiquement et configure tout.
 
-## 🛠️ Commandes utiles
 
-| Commande | Rôle | Quand l'utiliser |
-|---|---|---|
-| `npm run dev` | Démarre Vite en dev (HMR sur :5173) | Dev local |
-| `npm run build` | Build de prod → `dist/public/` | Avant push |
-| `npm run check` | Vérification TypeScript | Avant push |
-| `npm run appwrite:setup` | Configure database + collections + buckets | Manuel si besoin |
-| `npm run appwrite:seed` | Crée les 839 profils | Manuel si besoin |
-| `npm run appwrite:site` | Configure vars du site | Manuel si besoin |
-| `npm run appwrite:bootstrap` | Tout faire en une commande | Setup initial local |
+---
 
-> En production, GitHub Actions s'occupe de tout. Ces commandes sont pour le local.
-
-## 📊 Schéma d'automatisation
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  git push origin main                                        │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-                 ▼
-        GitHub Actions
-        ┌──────────────────────────────────────┐
-        │  Workflow 1: CI                       │
-        │   - npm ci                             │
-        │   - npm run check                      │
-        │   - npm run build                      │
-        └──────────────────────────────────────┘
-        ┌──────────────────────────────────────┐
-        │  Workflow 2: Setup Appwrite            │
-        │   - npm ci                             │
-        │   - npm run check                      │
-        │   - npm run build                      │
-        │   - npm run appwrite:setup             │
-        │     → Database + 12 collections        │
-        │     → 4 buckets                        │
-        │   - npm run appwrite:site              │
-        │     → Variables du site MAJ             │
-        │     → Déploiement déclenché            │
-        │   - npm run appwrite:seed              │
-        │     → 839 profils utilisateurs créés   │
-        └──────────────────────────────────────┘
-                 │
-                 ▼
-        Appwrite Console
-        ┌──────────────────────────────────────┐
-        │  Database: codet-db                    │
-        │  Collections: 12 (users, projects, …)  │
-        │  Buckets: 4                            │
-        │  Auth: 839 utilisateurs                │
-        │  Sites: déployé avec bonnes variables │
-        └──────────────────────────────────────┘
-```
-
-## ✅ Avantages vs Replit
-
-| Critère | Replit | Après migration |
-|---|---|---|
-| Hébergement | Replit Deploys | Appwrite Sites (gratuit) |
-| CI/CD | Aucune | GitHub Actions automatisée |
-| Setup base de données | Manuel | Automatique au push |
-| Création utilisateurs | Manuel | Automatique (839 profils) |
-| Coût mensuel | Replit Free limité | **0 €** |
-| IDE | Replit (restrictif) | GitHub Codespaces (VS Code) |
-
-## 🆘 Problèmes fréquents
-
-Voir la section « Dépannage » dans **`SETUP.md`**.
+CI trigger: commit by GitHub Copilot at 2026-08-15T09:27:00Z
