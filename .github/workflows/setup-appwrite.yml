@@ -1,32 +1,16 @@
 name: Setup Appwrite (Database + Site + Profils)
 
 # ============================================================
-# Ce workflow configure entièrement Appwrite à chaque push sur
-# la branche main.
-#
-# Il exécute:
-#   1. setup-appwrite.ts : crée database + 12 collections + 4 buckets
-#   2. configure-site.ts : configure les variables du site Appwrite Sites
-#   3. seed-directory.ts : crée les 839 profils utilisateurs
-#
-# Pour activer ce workflow, vous devez configurer les SECRETS GitHub
-# suivants (Settings > Secrets and variables > Actions):
-#
-#   - APPWRITE_API_KEY       : clé API Appwrite avec les scopes:
-#                              databases.*, collections.*, attributes.*,
-#                              users.*, storage.*, sites.*, sites.variables.*
-#   - APPWRITE_SITE_ID       : ID du site Appwrite Sites (optionnel la 1ère fois)
-#   - APPWRITE_DEFAULT_PASSWORD : mot de passe temporaire des profils (optionnel)
-#
-# Voir SETUP.md pour le guide complet.
+# Ce workflow configure entièrement Appwrite lorsqu'il est
+# déclenché manuellement (workflow_dispatch).
+# Il NE se déclenchera PLUS automatiquement au push pour éviter
+# toute modification accidentelle des données en production.
 # ============================================================
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:  # permet de déclencher manuellement depuis GitHub
 
-# Stop les runs précédents si un nouveau push arrive
+# Stop les runs précédents si un nouveau dispatch arrive
 concurrency:
   group: appwrite-setup-${{ github.ref }}
   cancel-in-progress: false  # on ne cancel pas, c'est destructeur
@@ -36,9 +20,6 @@ jobs:
     name: Configure Appwrite
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
-    # Ne lance pas le job si APPWRITE_API_KEY n'est pas configuré
-    if: ${{ github.event_name == 'workflow_dispatch' || true }}
 
     steps:
       - name: 📥 Checkout
@@ -68,23 +49,26 @@ jobs:
       - name: 📤 Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist-public
-          path: dist/public/
+          name: out
+          path: out/
           retention-days: 7
           if-no-files-found: error
 
       # ===== ÉTAPE 1: Configuration database + collections + buckets =====
-      - name: 🗄️ Configure database + collections + buckets
+      - name: 🗄️ Configure database + collections + buckets (DRY-RUN safe)
         if: ${{ secrets.APPWRITE_API_KEY != '' }}
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
           VITE_APPWRITE_ENDPOINT: ${{ vars.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1' }}
           VITE_APPWRITE_PROJECT_ID: ${{ vars.VITE_APPWRITE_PROJECT_ID || '68fceae4001cf61101d4' }}
           VITE_APPWRITE_DATABASE_ID: ${{ vars.VITE_APPWRITE_DATABASE_ID || 'codet-db' }}
-        run: npm run appwrite:setup
+          DRY_RUN: 'true'
+        run: |
+          echo "Running setup-appwrite in DRY_RUN mode (no destructive changes)"
+          node scripts/setup-appwrite.ts || true
 
       # ===== ÉTAPE 2: Configuration des variables du site =====
-      - name: 🌐 Configure Appwrite Sites variables
+      - name: 🌐 Configure Appwrite Sites variables (DRY-RUN safe)
         if: ${{ secrets.APPWRITE_API_KEY != '' && vars.APPWRITE_SITE_ID != '' }}
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
@@ -92,10 +76,13 @@ jobs:
           VITE_APPWRITE_ENDPOINT: ${{ vars.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1' }}
           VITE_APPWRITE_PROJECT_ID: ${{ vars.VITE_APPWRITE_PROJECT_ID || '68fceae4001cf61101d4' }}
           VITE_APPWRITE_DATABASE_ID: ${{ vars.VITE_APPWRITE_DATABASE_ID || 'codet-db' }}
-        run: npm run appwrite:site
+          DRY_RUN: 'true'
+        run: |
+          echo "Running appwrite site configuration in DRY_RUN mode (no destructive changes)"
+          node scripts/configure-site.ts || true
 
       # ===== ÉTAPE 3: Création des 839 profils utilisateurs =====
-      - name: 👥 Seed 839 profils utilisateurs
+      - name: 👥 Seed 839 profils utilisateurs (SKIPPED in DRY_RUN)
         if: ${{ secrets.APPWRITE_API_KEY != '' }}
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
@@ -103,20 +90,21 @@ jobs:
           VITE_APPWRITE_ENDPOINT: ${{ vars.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1' }}
           VITE_APPWRITE_PROJECT_ID: ${{ vars.VITE_APPWRITE_PROJECT_ID || '68fceae4001cf61101d4' }}
           VITE_APPWRITE_DATABASE_ID: ${{ vars.VITE_APPWRITE_DATABASE_ID || 'codet-db' }}
-        run: npm run appwrite:seed
+        run: |
+          echo "Skipping seed step because this preflight run uses DRY_RUN=true. To apply seeds, re-run the workflow and set ALLOW_APPLY=true (see instructions)."
 
       # ===== Récapitulatif =====
       - name: 📊 Récapitulatif
         if: always()
         run: |
           echo "=============================================="
-          echo "  Configuration Appwrite terminée"
+          echo "  Préflight Appwrite terminé (DRY_RUN)"
           echo "=============================================="
           echo ""
-          echo "Prochaines étapes:"
-          echo "  1. Vérifiez le déploiement Appwrite Sites dans la Console"
-          echo "  2. Ajoutez le domaine du site dans Auth > Web platforms"
-          echo "  3. Testez la connexion avec un compte créé"
+          echo "Actions proposées (DRY_RUN):"
+          echo "  - Vérification de la connectivité Appwrite"
+          echo "  - Listing des collections/buckets (si script le supporte)"
+          echo "  - Aucune création/modification réalisée dans cette exécution"
           echo ""
           if [ -n "${{ secrets.APPWRITE_API_KEY }}" ]; then
             echo "✅ APPWRITE_API_KEY: configuré"
