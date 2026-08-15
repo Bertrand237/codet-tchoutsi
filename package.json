@@ -6,7 +6,9 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "appwrite:bootstrap": "node scripts/appwrite-bootstrap.mjs",
+    "appwrite:seed": "node scripts/appwrite-seed.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
