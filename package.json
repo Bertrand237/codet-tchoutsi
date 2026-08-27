@@ -2,12 +2,14 @@
   "name": "codet-tchoutsi",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "tsc --noEmit",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
     "appwrite:setup": "node scripts/setup-appwrite.mjs",
     "appwrite:seed": "node scripts/seed-directory.mjs"
   },

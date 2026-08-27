@@ -1,5 +1,2 @@
-const config = {
-  plugins: ["@tailwindcss/postcss"],
-};
-
-export default config;
+// Fichier désactivé pour éviter les conflits avec postcss.config.js
+export default {};
