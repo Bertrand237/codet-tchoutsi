@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "appwrite:setup": "node scripts/setup-appwrite.mjs",
-    "appwrite:seed": "npx ts-node scripts/seed-directory.ts"
+    "appwrite:seed": "node scripts/seed-directory.mjs"
   },
   "dependencies": {
     "appwrite": "^14.0.0",

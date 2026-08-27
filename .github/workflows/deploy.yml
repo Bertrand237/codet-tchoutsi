@@ -16,31 +16,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24 # Utilisation de Node 24 pour éviter les erreurs de dépréciation
           cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Configure Appwrite Console
+      - name: Configure Appwrite Infrastructure
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-          VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
-          VITE_APPWRITE_PROJECT_ID: "697479255659757217691253116675952793"
-          VITE_APPWRITE_DATABASE_ID: "codet-db"
         run: |
           if [ -z "$APPWRITE_API_KEY" ]; then
-            echo "❌ APPWRITE_API_KEY non configuré."
+            echo "❌ ERREUR: Secret APPWRITE_API_KEY manquant sur GitHub."
             exit 1
           fi
-          npx ts-node scripts/setup-appwrite.ts
+          npm run appwrite:setup
 
-      - name: Generate Member Profiles
+      - name: Seed Member Profiles
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-          VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
-          VITE_APPWRITE_PROJECT_ID: "697479255659757217691253116675952793"
-        run: npx ts-node scripts/seed-directory.ts || echo "Seed skipped"
+        run: npm run appwrite:seed || echo "Seed skipped"
 
       - name: Build Frontend
         run: npm run build
