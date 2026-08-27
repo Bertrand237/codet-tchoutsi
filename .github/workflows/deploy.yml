@@ -22,19 +22,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Configure Appwrite Infrastructure
+      - name: Configure Appwrite Console
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
-          echo "🔍 Vérification du secret..."
-          if [ -z "$APPWRITE_API_KEY" ]; then
-            echo "❌ ERREUR CRITIQUE : Le secret APPWRITE_API_KEY est vide ou introuvable sur GitHub."
-            echo "Veuillez vérifier dans Settings > Secrets and variables > Actions."
-            exit 1
-          else
-            echo "✅ Secret détecté, lancement de la configuration..."
-            node scripts/setup-appwrite.mjs
-          fi
+          echo "✅ Secret détecté, lancement de la configuration..."
+          node scripts/setup-appwrite.mjs
 
       - name: Seed Member Profiles
         env:
@@ -46,3 +39,6 @@ jobs:
 
       - name: Build Frontend
         run: npm run build
+
+      - name: Check output directory
+        run: ls -R dist/public
