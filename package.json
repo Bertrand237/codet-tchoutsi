@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "appwrite:setup": "npx ts-node scripts/setup-appwrite.ts",
+    "appwrite:setup": "node scripts/setup-appwrite.mjs",
     "appwrite:seed": "npx ts-node scripts/seed-directory.ts"
   },
   "dependencies": {
@@ -27,6 +27,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.2",
     "typescript": "^5.5.4",
+    "@types/node": "^20.14.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
