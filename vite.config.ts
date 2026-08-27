@@ -16,7 +16,7 @@ export default defineConfig({
   },
   root: "client",
   build: {
-    outDir: "../dist",
+    outDir: "../dist/public", // Corrigé ici
     emptyOutDir: true,
     target: "esnext",
     minify: "esbuild",
