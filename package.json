@@ -5,9 +5,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "type": "module",
   "scripts": {
     "dev": "vite",
+    "check": "tsc --noEmit",
     "build": "vite build",
     "preview": "vite preview",
     "appwrite:setup": "node scripts/setup-appwrite.mjs",
