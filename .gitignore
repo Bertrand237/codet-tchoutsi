@@ -1,25 +1,21 @@
 # Dependencies
 node_modules
-.pnp
-.pnp.js
-
-# Build outputs
 dist
-.next
-out
-build
 
-# Environment variables
+# Environment
 .env
-.env.local
 
-# Editor
-.vscode
-.idea
-
-# Old Next.js remnants (Désactivés)
+# Old Folders (Next.js & Root duplicates) - ON LES SUPPRIME DU CLOUD
 /src
+/public
+/server
+/shared
 next.config.ts
 next.config.mjs
+postcss.config.mjs
 drizzle.config.ts
 components.json
+APPWRITE_SETUP.md
+APPWRITE-SITES-SETUP.md
+design_guidelines.md
+apply-migration.sh
