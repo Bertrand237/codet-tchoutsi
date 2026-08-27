@@ -1,4 +1,1 @@
-# Appwrite Sites - fallback SPA
-# Toutes les routes inconnues renvoient vers index.html
-# pour que wouter puisse gérer la route côté client.
-/*    /index.html   200
+/* /index.html 200

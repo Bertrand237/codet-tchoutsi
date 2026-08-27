@@ -33,3 +33,10 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Old Source (Next.js)
+src/
+next.config.ts
+next.config.mjs
+postcss.config.mjs
+tailwind.config.ts
