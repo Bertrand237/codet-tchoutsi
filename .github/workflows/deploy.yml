@@ -16,13 +16,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24 # Passage à Node 24 pour supprimer l'avertissement
           cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Configure Appwrite Console
+      - name: Configure Appwrite Infrastructure
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
