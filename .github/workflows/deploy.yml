@@ -1,27 +1,28 @@
-name: Deploy and Configure CODET
+name: Deploy CODET
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   full-setup:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: 🛠 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🗄️ Configure Appwrite Console
+      - name: Configure Appwrite Console
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
           VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
@@ -29,18 +30,17 @@ jobs:
           VITE_APPWRITE_DATABASE_ID: "codet-db"
         run: |
           if [ -z "$APPWRITE_API_KEY" ]; then
-            echo "❌ ERREUR: APPWRITE_API_KEY non trouvé dans les secrets GitHub."
-            echo "Allez dans Settings > Secrets and variables > Actions pour l'ajouter."
+            echo "❌ APPWRITE_API_KEY non configuré."
             exit 1
           fi
-          npm run appwrite:setup
+          npx ts-node scripts/setup-appwrite.ts
 
-      - name: 👥 Generate 839 Member Profiles
+      - name: Generate Member Profiles
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
           VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
           VITE_APPWRITE_PROJECT_ID: "697479255659757217691253116675952793"
-        run: npm run appwrite:seed || echo "Seed skipped"
+        run: npx ts-node scripts/seed-directory.ts || echo "Seed skipped"
 
-      - name: 🏗️ Build Frontend
+      - name: Build Frontend
         run: npm run build
