@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24 # Utilisation de Node 24 pour éviter les erreurs de dépréciation
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -26,16 +26,23 @@ jobs:
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
+          echo "🔍 Vérification du secret..."
           if [ -z "$APPWRITE_API_KEY" ]; then
-            echo "❌ ERREUR: Secret APPWRITE_API_KEY manquant sur GitHub."
+            echo "❌ ERREUR CRITIQUE : Le secret APPWRITE_API_KEY est vide ou introuvable sur GitHub."
+            echo "Veuillez vérifier dans Settings > Secrets and variables > Actions."
             exit 1
+          else
+            echo "✅ Secret détecté, lancement de la configuration..."
+            node scripts/setup-appwrite.mjs
           fi
-          npm run appwrite:setup
 
       - name: Seed Member Profiles
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-        run: npm run appwrite:seed || echo "Seed skipped"
+        run: |
+          if [ -f "scripts/seed-directory.mjs" ]; then
+            node scripts/seed-directory.mjs || echo "⚠️ Seed ignoré ou échoué."
+          fi
 
       - name: Build Frontend
         run: npm run build
