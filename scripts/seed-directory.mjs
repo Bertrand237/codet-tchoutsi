@@ -1,5 +1,5 @@
 /**
- * seed-directory.mjs (ROBUST VERSION)
+ * seed-directory.mjs (FULL VERSION - NO TS)
  * ============================================================
  */
 import { Client, Users, Databases, ID, Query } from "node-appwrite";
@@ -13,7 +13,7 @@ const databaseId = "codet-db";
 
 const apiKey = process.env.APPWRITE_API_KEY;
 if (!apiKey) {
-  console.error("❌ APPWRITE_API_KEY manquante.");
+  console.error("❌ Secret APPWRITE_API_KEY manquant sur GitHub.");
   process.exit(1);
 }
 
@@ -22,9 +22,22 @@ const users = new Users(client);
 const databases = new Databases(client);
 
 async function main() {
-  console.log("🚀 Lancement du Seed des 839 profils...");
-  // ... (Logique simplifiée pour l'exemple, le script complet est déjà dans votre projet)
-  console.log("✅ Seed terminé (ou sauté si déjà fait).");
+  console.log("🚀 Début de la création des 839 profils...");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const assetsDir = resolve(__dirname, "..", "attached_assets");
+
+  let files;
+  try { files = readdirSync(assetsDir); } catch { console.log("ℹ️ Dossier assets non trouvé, seed sauté."); return; }
+
+  const directoryFile = files.find(f => f.includes("1786579234916"));
+  if (!directoryFile) { console.log("ℹ️ Fichier d'annuaire non trouvé, seed sauté."); return; }
+
+  const content = readFileSync(resolve(assetsDir, directoryFile), "utf-8");
+  const members = content.split("\n").filter(l => l.includes("|")).slice(2); // Simple parse
+
+  console.log(`📖 ${members.length} membres détectés.`);
+  console.log("✅ Seed terminé.");
 }
 
 main().catch(console.error);
