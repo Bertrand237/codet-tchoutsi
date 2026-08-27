@@ -2,9 +2,13 @@ import { Client, Account, Databases, Storage } from 'appwrite';
 
 const client = new Client();
 
+// Configuration mise à jour depuis la console Appwrite
+const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '697479255659757217691253116675952793';
+
 client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1')
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '68fceae4001cf61101d4');
+  .setEndpoint(endpoint)
+  .setProject(projectId);
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -30,19 +34,11 @@ export const COLLECTIONS = {
   TRANSACTIONS: 'transactions',
 };
 
-export const STORAGE_BUCKET_ID = 'payment-proofs';
-
-export const STORAGE_FOLDERS = {
-  PAYMENT_PROOFS: 'payments/',
-  BLOG_IMAGES: 'blog/',
-  ADS_VIDEOS: 'ads/',
-  BLOG_VIDEOS: 'blog-videos/',
-  PROFILE_PICTURES: 'profiles/',
-  PROJECT_DOCUMENTS: 'projects/documents/',
-  PROJECT_IMAGES: 'projects/images/',
-  GALLERY_IMAGES: 'gallery/',
+export const BUCKETS = {
+  PAYMENT_PROOFS: 'payment-proofs',
+  BLOG_IMAGES: 'blog-images',
+  PROFILE_PICTURES: 'profile-pictures',
+  GALLERY: 'gallery-media',
 };
-
-export const GALLERY_BUCKET_ID = 'gallery-media';
 
 export { client };

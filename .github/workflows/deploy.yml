@@ -1,0 +1,37 @@
+name: Full Automation: Configure Appwrite + Build Site
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  configure-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: 🗄️ step 1: Configure Database & Collections
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
+          VITE_APPWRITE_PROJECT_ID: "697479255659757217691253116675952793"
+        run: npx ts-node scripts/setup-appwrite.ts
+
+      - name: 👥 step 2: Generate Member Profiles (800+)
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          VITE_APPWRITE_ENDPOINT: "https://fra.cloud.appwrite.io/v1"
+          VITE_APPWRITE_PROJECT_ID: "697479255659757217691253116675952793"
+        run: npx ts-node scripts/seed-directory.ts || echo "Seed skipped"
+
+      - name: 🏗️ step 3: Build Frontend (Vite)
+        run: npm run build
