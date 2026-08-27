@@ -1,6 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "url";
 import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
@@ -12,12 +16,11 @@ export default defineConfig({
   },
   root: "client",
   build: {
-    outDir: "../dist/public",
+    outDir: "../dist",
     emptyOutDir: true,
-    sourcemap: false,
-  },
-  server: {
-    port: 5173,
-    host: "0.0.0.0",
+    target: "esnext",
+    minify: "esbuild",
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1000,
   },
 });
