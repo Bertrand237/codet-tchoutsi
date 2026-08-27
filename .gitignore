@@ -34,9 +34,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Old Source (Next.js)
+# Old Source (Next.js) - ON GARDE LES CONFIGS TAILWIND ET POSTCSS
 src/
 next.config.ts
 next.config.mjs
-postcss.config.mjs
-tailwind.config.ts
