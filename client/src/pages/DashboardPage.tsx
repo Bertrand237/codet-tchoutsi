@@ -33,7 +33,7 @@ export default function DashboardPage() {
       try {
         const empty = { documents: [], total: 0 };
 
-        // ✅ Appelle Appwrite directement (sans firebase-compat)
+        // ✅ Appelle Appwrite directement
         const results = await Promise.allSettled([
           databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS),
           databases.listDocuments(DATABASE_ID, COLLECTIONS.PAYMENTS),
