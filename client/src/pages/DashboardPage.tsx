@@ -30,19 +30,12 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [
-          usersSnap,
-          paymentsSnap,
-          pendingSnap,
-          validatedSnap,
-          familiesSnap,
-          messagesSnap,
-          blogSnap,
-          projectsSnap,
-          activeProjectsSnap,
-          completedProjectsSnap,
-          budgetSnap,
-        ] = await Promise.all([
+        // Helper: extract result from settled promise or return empty snapshot
+        const empty = { documents: [], total: 0, size: 0 };
+        const ok = (r: PromiseSettledResult<any>) =>
+          r.status === 'fulfilled' ? r.value : empty;
+
+        const results = await Promise.allSettled([
           getDocs(collection(db, "users")),
           getDocs(collection(db, "payments")),
           getDocs(query(collection(db, "payments"), where("status", "==", "en_attente"))),
@@ -56,7 +49,21 @@ export default function DashboardPage() {
           getDocs(collection(db, "budget")),
         ]);
 
-        const totalAmount = paymentsSnap.documents.reduce((sum, doc) => sum + (doc.montant || 0), 0);
+        const [
+          usersSnap,
+          paymentsSnap,
+          pendingSnap,
+          validatedSnap,
+          familiesSnap,
+          messagesSnap,
+          blogSnap,
+          projectsSnap,
+          activeProjectsSnap,
+          completedProjectsSnap,
+          budgetSnap,
+        ] = results.map(ok);
+
+        const totalAmount = paymentsSnap.documents.reduce((sum: number, doc: any) => sum + (doc.amount || doc.montant || 0), 0);
 
         setStats({
           totalMembers: usersSnap.total,
@@ -80,7 +87,7 @@ export default function DashboardPage() {
           "terminé": 0,
           "archivé": 0,
         };
-        projectsSnap.documents.forEach((doc) => {
+        projectsSnap.documents.forEach((doc: any) => {
           const status = doc.status;
           if (projectsStatusMap[status] !== undefined) {
             projectsStatusMap[status]++;
@@ -101,12 +108,12 @@ export default function DashboardPage() {
           monthlyPayments[monthKey] = 0;
         }
 
-        paymentsSnap.documents.forEach((doc) => {
+        paymentsSnap.documents.forEach((doc: any) => {
           const data = doc;
-          const paymentDate = new Date(data.date);
+          const paymentDate = new Date(data.date || data.createdAt);
           const monthKey = paymentDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
           if (monthlyPayments[monthKey] !== undefined) {
-            monthlyPayments[monthKey] += data.montant || 0;
+            monthlyPayments[monthKey] += data.amount || data.montant || 0;
           }
         });
 
@@ -124,7 +131,7 @@ export default function DashboardPage() {
           monthlyBudget[monthKey] = { revenus: 0, dépenses: 0 };
         }
 
-        budgetSnap.documents.forEach((doc) => {
+        budgetSnap.documents.forEach((doc: any) => {
           const data = doc;
           const transactionDate = new Date(data.date);
           const monthKey = transactionDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
@@ -153,6 +160,7 @@ export default function DashboardPage() {
 
     fetchStats();
   }, []);
+
 
   const statCards = [
     {

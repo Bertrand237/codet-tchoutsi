@@ -38,6 +38,8 @@ export default function BlogPage() {
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [videoFormData, setVideoFormData] = useState({
     title: "",
     description: "",
@@ -291,6 +293,7 @@ export default function BlogPage() {
   function resetVideoForm() {
     setVideoFormData({ title: "", description: "", isPublished: false });
     setVideoFile(null);
+    setVideoPreviewUrl(null);
     setVideoUploadProgress(0);
     setEditingVideo(null);
   }
@@ -321,9 +324,8 @@ export default function BlogPage() {
           setVideoUploadProgress(0);
           toast({ variant: "destructive", title: "Erreur", description: "Impossible de télécharger la vidéo." });
         },
-        async () => {
+        async (snapshot: any) => {
           try {
-            const snapshot = await uploadTask;
             const videoUrl = await getDownloadURL(snapshot.ref);
             await addDoc("blog-videos", {
               title: videoFormData.title,
@@ -517,12 +519,23 @@ export default function BlogPage() {
                       id="image"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setImageFile(f);
+                        setImagePreviewUrl(f ? URL.createObjectURL(f) : null);
+                      }}
                       data-testid="input-image"
                       className="h-12"
                     />
                     <Upload className="h-5 w-5 text-muted-foreground" />
                   </div>
+                  {imagePreviewUrl && (
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Aperçu"
+                      className="mt-2 w-full max-h-40 object-cover rounded-md border"
+                    />
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -594,11 +607,23 @@ export default function BlogPage() {
                     id="blog-video-file"
                     type="file"
                     accept="video/*"
-                    onChange={(event) => setVideoFile(event.target.files?.[0] || null)}
+                    onChange={(event) => {
+                      const f = event.target.files?.[0] || null;
+                      setVideoFile(f);
+                      setVideoPreviewUrl(f ? URL.createObjectURL(f) : null);
+                    }}
                     required
                     className="h-12"
                     data-testid="input-blog-video-file"
                   />
+                  {videoPreviewUrl && (
+                    <video
+                      src={videoPreviewUrl}
+                      controls
+                      muted
+                      className="mt-2 w-full aspect-video rounded-md bg-black"
+                    />
+                  )}
                 </div>
                 {submitting && videoUploadProgress > 0 && (
                   <p className="text-sm text-muted-foreground">

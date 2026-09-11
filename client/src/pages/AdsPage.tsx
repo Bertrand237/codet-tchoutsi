@@ -27,6 +27,7 @@ export default function AdsPage() {
     order: 0,
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -106,9 +107,8 @@ export default function AdsPage() {
           setSubmitting(false);
           setUploadProgress(0);
         },
-        async () => {
+        async (snapshot: any) => {
           try {
-            const snapshot = await uploadTask;
             const videoURL = await getDownloadURL(snapshot.ref);
 
             const adData = {
@@ -130,6 +130,7 @@ export default function AdsPage() {
             setDialogOpen(false);
             setFormData({ title: "", active: true, order: 0 });
             setVideoFile(null);
+            setVideoPreviewUrl(null);
             setUploadProgress(0);
             setSubmitting(false);
             fetchAds();
@@ -300,6 +301,7 @@ export default function AdsPage() {
             if (!open) {
               setFormData({ title: "", active: true, order: 0 });
               setVideoFile(null);
+              setVideoPreviewUrl(null);
               setUploadProgress(0);
             }
           }}>
@@ -338,7 +340,16 @@ export default function AdsPage() {
                       id="video"
                       type="file"
                       accept="video/*"
-                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setVideoFile(f);
+                        if (f) {
+                          const url = URL.createObjectURL(f);
+                          setVideoPreviewUrl(url);
+                        } else {
+                          setVideoPreviewUrl(null);
+                        }
+                      }}
                       required
                       data-testid="input-video"
                       className="h-12"
@@ -373,6 +384,18 @@ export default function AdsPage() {
                     Activer immédiatement
                   </Label>
                 </div>
+
+                {videoPreviewUrl && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Aperçu :</p>
+                    <video
+                      src={videoPreviewUrl}
+                      controls
+                      muted
+                      className="w-full rounded-md aspect-video bg-black"
+                    />
+                  </div>
+                )}
 
                 {submitting && uploadProgress > 0 && (
                   <div className="space-y-2">

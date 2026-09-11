@@ -7,9 +7,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const endpoint = "https://fra.cloud.appwrite.io/v1";
-const projectId = "697479255659757217691253116675952793";
-const databaseId = "codet-db";
+const endpoint = process.env.VITE_APPWRITE_ENDPOINT || process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1";
+const projectId = process.env.VITE_APPWRITE_PROJECT_ID || process.env.APPWRITE_PROJECT_ID || "697479255659757217691253116675952793";
+const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || process.env.APPWRITE_DATABASE_ID || "codet-db";
 
 const apiKey = process.env.APPWRITE_API_KEY;
 if (!apiKey) {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.appwrite.io/v1",
-  "projectId": "68fceae4001cf61101d4",
+  "projectId": "697479255659757217691253116675952793",
   "projectName": "CODET",
   "settings": {
     "platforms": [
@@ -31,7 +31,7 @@
         },
         {
           "key": "VITE_APPWRITE_PROJECT_ID",
-          "value": "68fceae4001cf61101d4"
+          "value": "697479255659757217691253116675952793"
         },
         {
           "key": "VITE_APPWRITE_DATABASE_ID",

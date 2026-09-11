@@ -39,7 +39,8 @@ export default function VotesPage() {
     try {
       const pollsRef = "polls";
       const q = query(pollsRef, orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);      const pollsData = snapshot.documents.map((doc) => {
+      const snapshot = await getDocs(q);
+      const pollsData = snapshot.documents.map((doc) => {
         const data = doc;
         return {
           id: doc.$id,

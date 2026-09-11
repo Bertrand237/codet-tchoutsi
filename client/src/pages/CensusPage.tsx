@@ -44,7 +44,7 @@ export default function CensusPage() {
 
       const snapshot = await getDocs(q);
       const familiesData = snapshot.documents.map((doc) => {
-        let membres = [];
+        let membres: any[] = [];
         try {
           membres = doc.members ? JSON.parse(doc.members) : [];
           membres = membres.map((m: any) => ({

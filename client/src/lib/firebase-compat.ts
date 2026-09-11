@@ -169,12 +169,19 @@ export function uploadBytesResumable(fileRef: { path: string; bucket: string; fi
   const listeners: { [key: string]: any[] } = {
     state_changed: [],
     complete: [],
-    error: []
+    error: [],
   };
 
-  // Simulate progress with actual upload
+  // Will hold the resolved snapshot so the complete callback can use it
+  let resolvedSnapshot: { ref: { path: string; bucket: string; fileId?: string }; metadata: any } | null = null;
+
   const uploadTask = {
-    on: (event: string, progressCallback?: (snapshot: any) => void, errorCallback?: (error: any) => void, completeCallback?: () => void) => {
+    on: (
+      event: string,
+      progressCallback?: (snapshot: any) => void,
+      errorCallback?: (error: any) => void,
+      completeCallback?: () => void
+    ) => {
       if (event === 'state_changed') {
         if (progressCallback) listeners.state_changed.push(progressCallback);
         if (errorCallback) listeners.error.push(errorCallback);
@@ -187,65 +194,75 @@ export function uploadBytesResumable(fileRef: { path: string; bucket: string; fi
     },
     catch: (errorCallback: (error: any) => void) => {
       return uploadPromise.catch(errorCallback);
-    }
+    },
+    // Allow awaiting the task to get the snapshot (used in complete callbacks)
+    getSnapshot: () => resolvedSnapshot,
   };
 
-  const uploadPromise = (async () => {
-    let progressInterval: NodeJS.Timeout | null = null;
+  // Defer the actual upload by one microtask so .on() callbacks are attached first
+  const uploadPromise: Promise<{ ref: { path: string; bucket: string; fileId?: string }; metadata: any }> = Promise.resolve().then(async () => {
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
     try {
-      // Simulate progress updates
+      // Simulate incremental progress updates while upload runs
       progressInterval = setInterval(() => {
-        if (uploadProgress < 90) {
+        if (uploadProgress < 85) {
           uploadProgress += 10;
-          listeners.state_changed.forEach(cb => cb({
-            bytesTransferred: (file.size * uploadProgress) / 100,
-            totalBytes: file.size,
-            state: 'running',
-            ref: fileRef
-          }));
+          listeners.state_changed.forEach((cb) =>
+            cb({
+              bytesTransferred: (file.size * uploadProgress) / 100,
+              totalBytes: file.size,
+              state: 'running',
+              ref: fileRef,
+            })
+          );
         }
-      }, 100);
+      }, 150);
 
       const uploadResult = await appwriteStorage.createFile(fileRef.bucket, fileId, file);
+
       clearInterval(progressInterval);
       progressInterval = null;
-      
-      // Final progress update
+
+      // 100% progress
       uploadProgress = 100;
-      listeners.state_changed.forEach(cb => cb({
-        bytesTransferred: file.size,
-        totalBytes: file.size,
-        state: 'success',
-        ref: fileRef
-      }));
+      listeners.state_changed.forEach((cb) =>
+        cb({
+          bytesTransferred: file.size,
+          totalBytes: file.size,
+          state: 'success',
+          ref: fileRef,
+        })
+      );
 
       fileRef.fileId = uploadResult.$id;
-      const snapshot = { 
+      const snapshot = {
         ref: { ...fileRef, fileId: uploadResult.$id },
-        metadata: uploadResult
+        metadata: uploadResult,
       };
 
-      listeners.complete.forEach(cb => cb());
+      resolvedSnapshot = snapshot;
+
+      // Fire complete listeners — they can call uploadTask.getSnapshot() to retrieve the snapshot
+      listeners.complete.forEach((cb) => cb(snapshot));
+
       return snapshot;
     } catch (error) {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-      listeners.error.forEach(cb => cb(error));
+      if (progressInterval) clearInterval(progressInterval);
+      listeners.error.forEach((cb) => cb(error));
       throw error;
     }
-  })();
+  });
 
   return uploadTask;
 }
 
-export async function getDownloadURL(fileRef: { path: string; bucket: string; fileId?: string }) {
+export async function getDownloadURL(fileRef: { path: string; bucket: string; fileId?: string }): Promise<string> {
   if (!fileRef.fileId) {
     throw new Error('File ID is required to get download URL');
   }
   
   const result = appwriteStorage.getFileView(fileRef.bucket, fileRef.fileId);
-  return result;
+  return result.toString();
 }
 
 export async function deleteObject(fileRef: { bucket: string; fileId: string }) {

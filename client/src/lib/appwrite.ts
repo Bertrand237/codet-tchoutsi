@@ -5,7 +5,7 @@ const client = new Client();
 
 client
   .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1')
-  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '68fceae4001cf61101d4');
+  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '697479255659757217691253116675952793');
 
 // Services Appwrite
 export const account = new Account(client);
