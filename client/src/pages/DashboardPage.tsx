@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { databases, DATABASE_ID, COLLECTIONS } from "@/lib/appwrite";
+import { Query } from "appwrite";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, CheckCircle, Clock, UsersRound, MessageSquare, TrendingUp, FolderKanban, Newspaper, BarChart3, LineChart } from "lucide-react";
 import type { Statistics } from "@shared/schema";
 import { BarChart, Bar, LineChart as RechartsLineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { collection, getDocs, query, where, orderBy, limit, db, toDate } from '@/lib/firebase-compat';
 import AdsCarousel from "@/components/AdsCarousel";
 
 export default function DashboardPage() {
@@ -30,23 +31,21 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Helper: extract result from settled promise or return empty snapshot
-        const empty = { documents: [], total: 0, size: 0 };
-        const ok = (r: PromiseSettledResult<any>) =>
-          r.status === 'fulfilled' ? r.value : empty;
+        const empty = { documents: [], total: 0 };
 
+        // ✅ Appelle Appwrite directement (sans firebase-compat)
         const results = await Promise.allSettled([
-          getDocs(collection(db, "users")),
-          getDocs(collection(db, "payments")),
-          getDocs(query(collection(db, "payments"), where("status", "==", "en_attente"))),
-          getDocs(query(collection(db, "payments"), where("status", "==", "validé"))),
-          getDocs(collection(db, "families")),
-          getDocs(query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(100))),
-          getDocs(collection(db, "blog-posts")),
-          getDocs(collection(db, "projects")),
-          getDocs(query(collection(db, "projects"), where("status", "==", "en_cours"))),
-          getDocs(query(collection(db, "projects"), where("status", "==", "terminé"))),
-          getDocs(collection(db, "budget")),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.USERS),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PAYMENTS),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PAYMENTS, [Query.equal('status', 'en_attente')]),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PAYMENTS, [Query.equal('status', 'validé')]),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.FAMILIES),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.MESSAGES, [Query.orderDesc('timestamp'), Query.limit(100)]),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.BLOG_POSTS),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS, [Query.equal('status', 'en_cours')]),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.PROJECTS, [Query.equal('status', 'terminé')]),
+          databases.listDocuments(DATABASE_ID, COLLECTIONS.BUDGET),
         ]);
 
         const [
@@ -61,7 +60,7 @@ export default function DashboardPage() {
           activeProjectsSnap,
           completedProjectsSnap,
           budgetSnap,
-        ] = results.map(ok);
+        ] = results.map(r => r.status === 'fulfilled' ? r.value : empty);
 
         const totalAmount = paymentsSnap.documents.reduce((sum: number, doc: any) => sum + (doc.amount || doc.montant || 0), 0);
 
@@ -79,7 +78,7 @@ export default function DashboardPage() {
           completedProjects: completedProjectsSnap.total,
         });
 
-        // Projects by status
+        // Projets par statut
         const projectsStatusMap: Record<string, number> = {
           "planifié": 0,
           "en_cours": 0,
@@ -99,7 +98,7 @@ export default function DashboardPage() {
         }));
         setProjectsData(projectsChartData);
 
-        // Payments by month (last 6 months)
+        // Paiements par mois (6 derniers mois)
         const monthlyPayments: Record<string, number> = {};
         const now = new Date();
         for (let i = 5; i >= 0; i--) {
@@ -109,11 +108,10 @@ export default function DashboardPage() {
         }
 
         paymentsSnap.documents.forEach((doc: any) => {
-          const data = doc;
-          const paymentDate = new Date(data.date || data.createdAt);
+          const paymentDate = new Date(doc.date || doc.createdAt);
           const monthKey = paymentDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
           if (monthlyPayments[monthKey] !== undefined) {
-            monthlyPayments[monthKey] += data.amount || data.montant || 0;
+            monthlyPayments[monthKey] += doc.amount || doc.montant || 0;
           }
         });
 
@@ -123,7 +121,7 @@ export default function DashboardPage() {
         }));
         setPaymentsData(paymentsChartData);
 
-        // Budget by month (last 6 months)
+        // Budget par mois
         const monthlyBudget: Record<string, { revenus: number; dépenses: number }> = {};
         for (let i = 5; i >= 0; i--) {
           const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -132,14 +130,13 @@ export default function DashboardPage() {
         }
 
         budgetSnap.documents.forEach((doc: any) => {
-          const data = doc;
-          const transactionDate = new Date(data.date);
+          const transactionDate = new Date(doc.date);
           const monthKey = transactionDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
           if (monthlyBudget[monthKey]) {
-            if (data.type === "revenu") {
-              monthlyBudget[monthKey].revenus += data.montant || 0;
-            } else if (data.type === "dépense") {
-              monthlyBudget[monthKey].dépenses += data.montant || 0;
+            if (doc.type === "revenu") {
+              monthlyBudget[monthKey].revenus += doc.montant || 0;
+            } else if (doc.type === "dépense") {
+              monthlyBudget[monthKey].dépenses += doc.montant || 0;
             }
           }
         });
@@ -152,7 +149,7 @@ export default function DashboardPage() {
         setBudgetData(budgetChartData);
 
       } catch (error) {
-        console.error("Error fetching statistics:", error);
+        console.error("Erreur récupération statistiques:", error);
       } finally {
         setLoading(false);
       }
@@ -160,7 +157,6 @@ export default function DashboardPage() {
 
     fetchStats();
   }, []);
-
 
   const statCards = [
     {
