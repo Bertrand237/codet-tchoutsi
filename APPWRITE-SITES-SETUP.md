@@ -11,10 +11,11 @@ Dans Appwrite Console :
 3. Utiliser les paramètres suivants :
 
 ```text
-Root directory: /
+Root directory: (laisser vide, ne PAS mettre /)
 Install command: npm ci
 Build command: npm run build
-Output directory: dist/public
+Output directory: dist
+Fallback file: index.html
 ```
 
 4. Ajouter les variables suivantes dans les variables d'environnement du site :

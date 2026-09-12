@@ -5,40 +5,11 @@
     "platforms": [
       {
         "type": "web",
-        "name": "CODET Web (Appwrite Sites)",
+        "name": "CODET Web",
         "hostname": "codet-tchoutsi.appwrite.global"
       }
     ]
   },
-  "sites": [
-    {
-      "$id": "codet-tchoutsi",
-      "siteId": "codet-tchoutsi",
-      "name": "CODET Tchoutsi",
-      "framework": "vite",
-      "repository": "https://github.com/Bertrand237/codet-tchoutsi",
-      "branch": "main",
-      "rootDirectory": "/",
-      "installCommand": "npm ci",
-      "buildCommand": "npm run build",
-      "outputDirectory": "dist/public",
-      "fallbackFile": "index.html",
-      "variables": [
-        {
-          "key": "VITE_APPWRITE_ENDPOINT",
-          "value": "https://fra.cloud.appwrite.io/v1"
-        },
-        {
-          "key": "VITE_APPWRITE_PROJECT_ID",
-          "value": "697479255659757217691253116675952793"
-        },
-        {
-          "key": "VITE_APPWRITE_DATABASE_ID",
-          "value": "codet-db"
-        }
-      ]
-    }
-  ],
   "databases": [
     {
       "$id": "codet-db",
