@@ -1,12 +1,10 @@
 {
-  "$schema": "https://schema.appwrite.io/v1",
   "projectId": "697479255659757217691253116675952793",
   "projectName": "CODET",
   "settings": {
     "platforms": [
       {
         "type": "web",
-        "key": "codet-tchoutsi",
         "name": "CODET Web (Appwrite Sites)",
         "hostname": "codet-tchoutsi.appwrite.global"
       }
@@ -14,6 +12,7 @@
   },
   "sites": [
     {
+      "$id": "codet-tchoutsi",
       "siteId": "codet-tchoutsi",
       "name": "CODET Tchoutsi",
       "framework": "vite",

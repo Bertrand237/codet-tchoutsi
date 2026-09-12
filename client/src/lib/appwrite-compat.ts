@@ -83,13 +83,13 @@ export function where(
     return Query.lessThan(fieldPath, value);
   }
   if (opStr === '<=') {
-    return Query.lessThanOrEqual(fieldPath, value);
+    return Query.lessThanEqual(fieldPath, value);
   }
   if (opStr === '>') {
     return Query.greaterThan(fieldPath, value);
   }
   if (opStr === '>=') {
-    return Query.greaterThanOrEqual(fieldPath, value);
+    return Query.greaterThanEqual(fieldPath, value);
   }
   if (opStr === 'in') {
     return Query.equal(fieldPath, value);

@@ -180,7 +180,7 @@ export function uploadBytesResumable(fileRef: { path: string; bucket: string; fi
       event: string,
       progressCallback?: (snapshot: any) => void,
       errorCallback?: (error: any) => void,
-      completeCallback?: () => void
+      completeCallback?: (snapshot?: any) => void | Promise<void>
     ) => {
       if (event === 'state_changed') {
         if (progressCallback) listeners.state_changed.push(progressCallback);
