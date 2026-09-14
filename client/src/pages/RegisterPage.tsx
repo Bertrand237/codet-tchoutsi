@@ -55,11 +55,15 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary mb-4">
-            <span className="text-3xl font-bold text-primary-foreground">C</span>
+          <div className="inline-flex p-3 bg-white rounded-2xl shadow-lg border border-border/50 mb-4">
+            <img
+              src="/logo.png"
+              alt="Logo CODET"
+              className="h-20 w-20 object-contain"
+            />
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">CODET</h1>
-          <p className="text-muted-foreground">Comité de Développement Tchoutsi</p>
+          <h1 className="text-3xl font-bold text-foreground mb-1 tracking-tight">CODET</h1>
+          <p className="text-sm text-muted-foreground font-medium">Comité de Développement Tchoutsi</p>
         </div>
 
         <Card className="border-2">

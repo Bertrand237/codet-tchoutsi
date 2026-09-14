@@ -27,7 +27,7 @@ import { fileURLToPath } from "node:url";
 const endpoint =
   process.env.VITE_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1";
 const projectId =
-  process.env.VITE_APPWRITE_PROJECT_ID || "68fceae4001cf61101d4";
+  process.env.VITE_APPWRITE_PROJECT_ID || "697479255659757217691253116675952793";
 const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || "codet-db";
 
 if (!process.env.APPWRITE_API_KEY) {

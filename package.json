@@ -10,8 +10,8 @@
     "check": "tsc --noEmit",
     "build": "vite build && node scripts/post-build.mjs",
     "preview": "vite preview",
-    "appwrite:setup": "node scripts/setup-appwrite.mjs",
-    "appwrite:seed": "node scripts/seed-directory.mjs"
+    "appwrite:setup": "tsx scripts/setup-appwrite.ts",
+    "appwrite:seed": "tsx scripts/deploy-appwrite.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

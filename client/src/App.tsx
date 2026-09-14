@@ -47,12 +47,14 @@ function AuthenticatedRouter() {
         <header className="border-b border-border bg-background sticky top-0 z-10">
           <div className="container mx-auto flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-xl font-bold text-primary-foreground">C</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Logo CODET"
+                className="h-10 w-10 object-contain rounded-lg bg-white p-0.5 shadow-sm border border-border shrink-0"
+              />
               <div>
-                <h1 className="text-lg font-bold">CODET</h1>
-                <p className="text-xs text-muted-foreground">Comité de Développement</p>
+                <h1 className="text-base font-bold leading-tight">CODET</h1>
+                <p className="text-xs text-muted-foreground">Comité de Développement Tchoutsi</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

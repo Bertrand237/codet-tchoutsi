@@ -132,14 +132,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
+      <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <span className="text-xl font-bold text-sidebar-primary-foreground">C</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">CODET</h2>
-            <p className="text-xs text-sidebar-foreground/70">Comité de Développement</p>
+          <img
+            src="/logo.png"
+            alt="Logo CODET"
+            className="h-10 w-10 object-contain rounded-lg bg-white p-0.5 shadow-sm border border-sidebar-border shrink-0"
+          />
+          <div className="overflow-hidden">
+            <h2 className="text-base font-bold text-sidebar-foreground leading-tight truncate">CODET</h2>
+            <p className="text-xs text-sidebar-foreground/70 truncate">Comité de Développement</p>
           </div>
         </div>
       </SidebarHeader>

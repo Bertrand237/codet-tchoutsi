@@ -67,11 +67,24 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md border-2">
-        <CardHeader>
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <LockKeyhole className="h-6 w-6" />
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="inline-flex p-3 bg-white rounded-2xl shadow-lg border border-border/50 mb-3">
+            <img
+              src="/logo.png"
+              alt="Logo CODET"
+              className="h-16 w-16 object-contain"
+            />
           </div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">CODET</h1>
+          <p className="text-xs text-muted-foreground">Comité de Développement Tchoutsi</p>
+        </div>
+
+        <Card className="w-full border-2">
+          <CardHeader>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <LockKeyhole className="h-6 w-6" />
+            </div>
           <CardTitle>Choisissez votre mot de passe</CardTitle>
           <CardDescription>
             Pour votre première connexion, remplacez le mot de passe provisoire par un mot de passe personnel.
@@ -124,5 +137,6 @@ export default function ChangePasswordPage() {
         </CardContent>
       </Card>
     </div>
+  </div>
   );
 }
