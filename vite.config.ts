@@ -2,36 +2,55 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+// Configuration Vite pour codet-tchoutsi
+// Build statique 100% frontend (le client parle directement à Appwrite)
+// Sortie dans dist/public/ (compatible Appwrite Sites)
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client/src"),
+      "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
+      "@assets": path.resolve(__dirname, "attached_assets"),
     },
   },
-  root: "client",
+  root: path.resolve(__dirname, "client"),
   build: {
-    outDir: "../dist",
+    outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules/jspdf") || id.includes("node_modules/jspdf-autotable")) {
-            return "vendor-pdf";
-          }
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) {
-            return "vendor-charts";
-          }
-          if (id.includes("node_modules/framer-motion")) {
-            return "vendor-motion";
-          }
-          if (id.includes("node_modules/appwrite")) {
-            return "vendor-appwrite";
-          }
+        manualChunks: {
+          react: ["react", "react-dom"],
+          appwrite: ["appwrite"],
+          radix: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-tooltip",
+          ],
+          calendar: ["react-big-calendar", "date-fns", "moment"],
+          pdf: ["jspdf", "jspdf-autotable"],
+          charts: ["recharts"],
         },
       },
     },
+  },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: false,
+    fs: {
+      strict: true,
+      deny: ["**/.*"],
+    },
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 4173,
   },
 });
